@@ -1,4 +1,4 @@
-# Custom PDF Generator
+# PDF Generator
 
 This project allows you to generate custom PDFs using JSON layouts and data. It uses `pdfmake` for PDF generation and `express` for serving the PDFs via an API.
 

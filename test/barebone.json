@@ -1,0 +1,23 @@
+{
+    "static": {},
+    "styles": {},
+    "setting": {
+      "output": "pdf",
+      "size": "LETTER",
+      "orientation": "portrait",
+      "margin": [20, 60, 40, 60]
+    },
+    "header": {
+      "margin": [20, 10, 20, 10],
+      "contents": []
+    },
+    "footer": {
+      "margin": [20, 20, 20, 20],
+      "contents": []
+    },
+    "body": {
+      "content": []
+    }
+  
+  }
+  

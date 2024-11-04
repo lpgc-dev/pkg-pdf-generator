@@ -1,0 +1,139 @@
+{
+    "header": {
+        "title": "Data 1",
+        "title2": "Data 2"
+    },
+    "header_array": ["Data String Array", "Sample 2"],
+    "header_object": {
+        "title": "Data Object",
+        "title2": "Data 2"
+    },
+    "sample": {
+        "header": {
+            "title": "Data 1",
+            "title2": "Data 2"
+        },
+        "data": [
+            {
+                "name": "Data 1",
+                "value": 1
+            },
+            {
+                "name": "Data 2",
+                "value": 2
+            },
+            {
+                "name": "Data 3",
+                "value": 3
+            },
+            {
+                "name": "Data 4",
+                "value": 4
+            },
+            {
+                "name": "Data 5",
+                "value": 5
+            },
+            {
+                "name": "Demo",
+                "value": "Demo"
+            }
+        ]
+    },
+    "single": {
+        "name": "Dynamic data",
+        "boolTest": true
+    },
+    "sample2": {
+        "header": {
+            "title": "Data 1",
+            "title2": "Boolean Data",
+            "title3": "String Data",
+            "title4" : "Style Data"
+        },
+        "data": [
+            {
+                "name": "Data 1",
+                "value": true,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Data 2",
+                "value": false,
+                "string": "type 2",
+                "color": false
+            },
+            {
+                "name": "Data 3",
+                "value": true,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Data 4",
+                "value": true,
+                "string": "type 2",
+                "color": false
+            },
+            {
+                "name": "Data 5",
+                "value": false,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Demo",
+                "value": true,
+                "string": "type 2",
+                "color": false
+            }
+        ]
+    },
+    "sample3": {
+        "header": {
+            "title": "Data 1",
+            "title2": "Boolean Data",
+            "title3": "String Data",
+            "title4" : "Style Data"
+        },
+        "data": [
+            {
+                "name": "Data 1",
+                "value": true,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Data 2",
+                "value": false,
+                "string": "type 2",
+                "color": false
+            },
+            {
+                "name": "Data 3",
+                "value": true,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Data 4",
+                "value": true,
+                "string": "type 2",
+                "color": false
+            },
+            {
+                "name": "Data 5",
+                "value": false,
+                "string": "type 1",
+                "color": true
+            },
+            {
+                "name": "Demo",
+                "value": true,
+                "string": "type 2",
+                "color": false
+            }
+        ]
+    }
+}

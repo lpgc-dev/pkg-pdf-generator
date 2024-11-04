@@ -323,8 +323,6 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `fit`: The size of the QR code, specified as a number.
 
-
-
 ### Conclusion
 
  This project provides a flexible and customizable way to generate PDFs using JSON layouts and data. By defining the layout structure and content in JSON format, you can easily create custom PDFs with different elements such as text, images, tables, and QR codes. The use of styles allows you to apply custom formatting to the content, making it easy to create professional-looking PDFs. With the ability to reference static and JSON data, you can dynamically generate PDFs based on different data sources.

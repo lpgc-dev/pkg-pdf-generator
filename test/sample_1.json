@@ -330,6 +330,10 @@
               "layout": null,
               "rowData": ["data"],
               "widths": ["*", "8%", "8%", "40%"],
+              "ignoreEmpty": {
+                  "enable": true,
+                  "value": ["severity", "likelyHood"]
+              },
               "body": {
                 "header": [
                   { "value": ["jsa_group"], "style": "header" },
@@ -338,7 +342,6 @@
                   { "value": "Action", "style": "header" }
                 ],
                 "rows": [
-                
                     {
                       "type": "text",
                       "value": ["jsa_name"],

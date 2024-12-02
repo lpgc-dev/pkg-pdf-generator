@@ -210,12 +210,25 @@ const tableObject = (layout, data, static) => {
 			}
 		}
 		if (rowData !== null) {
+			 // Apply ignoreEmpty logic if specified
+			 if (layout.ignoreEmpty?.enable && layout.ignoreEmpty?.value) {
+                rowData = rowData.filter(row =>
+                    !layout.ignoreEmpty.value.every(field => {
+                        const fieldValue = getValueFromPath(row, [field]);
+                        return fieldValue === undefined || fieldValue === null || fieldValue === '';
+                    })
+                );
+            }
+
+
+
 			// Iterate over each row of data and create table rows
 			for (const row of rowData) {
 				const tableRow = layout.body.rows.map((cell, index) => {
 					let cellData = null;
 					if (cell.type === 'table' && rowData !== null && cell.rowData !== undefined && cell.rowData !== null) {
 						return tableObject(cell, row, static); // Handle nested tables recursively
+						
 					} else {
 						const isArray = Array.isArray(cell.value);
 						if (isArray) {
@@ -227,6 +240,7 @@ const tableObject = (layout, data, static) => {
 							}
 						} else {
 							cellData = cell.value; // Direct value for the cell
+							
 							return object(cell, cellData, static, false, data); // Return formatted cell content
 						}
 					}
@@ -236,6 +250,7 @@ const tableObject = (layout, data, static) => {
 				while (tableRow.length < maxColumns) {
 					tableRow.push({ text: '' }); // Add empty cells
 				}
+				//console.log(tableRow);
 				table.body.push(tableRow); // Add row to table body
 			}
 		} else {
@@ -257,6 +272,12 @@ const tableObject = (layout, data, static) => {
 			}
 		}
 	}
+
+	// If the table has no rows (header only), return null
+	if (table.body.length <= (layout.body.header ? 1 : 0)) {
+		return null;
+	}
+
 
 	table.headerRows = 1; // Set the number of header rows
 	let tempTable = { table: table }; // Create table structure
@@ -292,7 +313,7 @@ const tableObject = (layout, data, static) => {
 };
 
 // Function to generate the PDF and save it to a file
-const runPdfGenerator = async (layout, data, res = null, outputToFile = false, filePath = 'output.pdf') => {
+const runPdfGenerator = async (layout, data,  type = 'buffer') => {
 	try {
 		const pdf = new pdfMakePrinter(fonts); // Create a new PDF printer instance
 
@@ -337,12 +358,27 @@ const runPdfGenerator = async (layout, data, res = null, outputToFile = false, f
 		if (layout.body) {
 			for (const content of layout.body.content) {
 				if (content.type === 'table') {
-					docDefinition.content.push(tableObject(content, data, layout.static)); // Add table content
+
+					const table = tableObject(content, data, layout.static);
+					
+					//docDefinition.content.push(tableObject(content, data, layout.static)); // Add table content
+					if (table) { // Only add non-null tables
+						docDefinition.content.push(table);
+					}
+
+
+
+
 				} else if (content.type === 'columns') {
 					const columns = [];
 					for (const column of content.contents) {
 						if (column.type === 'table') {
-							columns.push(tableObject(column, data, layout.static, true, data)); // Add table column
+
+							const table  = tableObject(column, data, layout.static, true, data);
+							if(table) {
+								columns.push(table);
+							}
+							//columns.push(tableObject(column, data, layout.static, true, data)); // Add table column
 						} else {
 							columns.push(object(column, data, layout.static, true, data)); // Add regular column content
 						}
@@ -376,6 +412,33 @@ const runPdfGenerator = async (layout, data, res = null, outputToFile = false, f
 		// Create the PDF document and save it to a file
 		const pdfDoc = pdf.createPdfKitDocument(docDefinition);
 
+		
+		if (type === 'buffer') {
+			let chunks = [];
+			pdfDoc.on('data', (chunk) => {
+				chunks.push(chunk);
+			});
+			return new Promise((resolve, reject) => {
+				pdfDoc.on('end', () => {
+					const pdfBuffer = Buffer.concat(chunks);
+					const base64Pdf = pdfBuffer.toString('base64');
+					// Prefix the Base64 string with application/pdf
+					const base64WithMimeType = `data:application/pdf;base64,${base64Pdf}`;
+					resolve(base64WithMimeType); // Resolve with Base64 string
+				});
+	
+				pdfDoc.on('error', (err) => {
+					reject(err);
+				});
+	
+				pdfDoc.end();
+			});
+		} else {
+			pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
+			pdfDoc.end(); // Finish writing the PDF
+		}
+
+		/*
         if (outputToFile) {
             pdfDoc.pipe(fs.createWriteStream(filePath));
             console.log(`PDF saved to ${filePath}`);
@@ -388,12 +451,13 @@ const runPdfGenerator = async (layout, data, res = null, outputToFile = false, f
         }
 
         pdfDoc.end();
-		
+		*/
 		//pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
 		//pdfDoc.end(); // Finish writing the PDF
 	} catch (error) {
-		console.log(error); // Log any errors that occur
-		return error; // Return error for handling
+		throw new Error(`PDF generation failed: ${error.message}`);
+		//console.log(error); // Log any errors that occur
+		//return error; // Return error for handling
 	}
 };
 

@@ -8,7 +8,7 @@ To get started with the custom PDF generator, follow these steps:
 
 - Input JSON data in the `layout.json` file.
 
-- Input JSON data in the `data.json` file.
+- Input JSON data in the `data.json` file. 
 
 The `layout.json` file contains the layout structure of the PDF, including the header, footer, and body content. The `data.json` file contains the data to be used in the PDF.
 
@@ -127,7 +127,11 @@ This barebones example provides a basic structure for creating a custom PDF layo
     "margin": [0, 0, 0, 0],
     "layout": null,
     "rowData": null,
-    "headerData": null
+    "headerData": null,
+    "ignoreEmpty": {
+        "enable": true,
+        "value": ["severity", "likelyHood"]
+    },
     "body": {
       "header": [],
       "body": []
@@ -154,6 +158,12 @@ This barebones example provides a basic structure for creating a custom PDF layo
   - header: An array to hold the contents of the table header.
 
   - rows: An array to hold the contents of the table body.
+
+- ignoreEmpty: An object to define whether to ignore rows with empty values, if an entire row is empty, it will ignore the table.:
+  - enable: A boolean value to enable or disable ignoring empty values.
+
+  - value: An array of keys to ignore if the value is empty.
+
 
 
 ### Styles

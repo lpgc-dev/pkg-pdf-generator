@@ -313,7 +313,7 @@ const tableObject = (layout, data, static) => {
 };
 
 // Function to generate the PDF and save it to a file
-const runPdfGenerator = async (layout, data,  type = 'buffer') => {
+const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
 	try {
 		const pdf = new pdfMakePrinter(fonts); // Create a new PDF printer instance
 
@@ -414,46 +414,34 @@ const runPdfGenerator = async (layout, data,  type = 'buffer') => {
 
 		
 		if (type === 'buffer') {
-			let chunks = [];
-			pdfDoc.on('data', (chunk) => {
-				chunks.push(chunk);
-			});
-			return new Promise((resolve, reject) => {
-				pdfDoc.on('end', () => {
-					const pdfBuffer = Buffer.concat(chunks);
-					const base64Pdf = pdfBuffer.toString('base64');
-					// Prefix the Base64 string with application/pdf
-					const base64WithMimeType = `data:application/pdf;base64,${base64Pdf}`;
-					resolve(base64WithMimeType); // Resolve with Base64 string
-				});
-	
-				pdfDoc.on('error', (err) => {
-					reject(err);
-				});
-	
-				pdfDoc.end();
-			});
-		} else {
-			pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
-			pdfDoc.end(); // Finish writing the PDF
-		}
-
-		/*
-        if (outputToFile) {
-            pdfDoc.pipe(fs.createWriteStream(filePath));
-            console.log(`PDF saved to ${filePath}`);
-        } else if (res) {
+            let chunks = [];
+            pdfDoc.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+            return new Promise((resolve, reject) => {
+                pdfDoc.on('end', () => {
+                    const pdfBuffer = Buffer.concat(chunks);
+                    const base64Pdf = pdfBuffer.toString('base64');
+                    // Prefix the Base64 string with application/pdf
+                    const base64WithMimeType = `data:application/pdf;base64,${base64Pdf}`;
+                    resolve(base64WithMimeType); // Resolve with Base64 string
+                });
+    
+                pdfDoc.on('error', (err) => {
+                    reject(err);
+                });
+    
+                pdfDoc.end();
+            });
+        } else if (type === 'direct' && res !== null) {
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', 'inline; filename=output.pdf');
             pdfDoc.pipe(res);
+            pdfDoc.end();
         } else {
-            throw new Error('Invalid output destination specified');
+            pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
+            pdfDoc.end(); // Finish writing the PDF
         }
-
-        pdfDoc.end();
-		*/
-		//pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
-		//pdfDoc.end(); // Finish writing the PDF
 	} catch (error) {
 		throw new Error(`PDF generation failed: ${error.message}`);
 		//console.log(error); // Log any errors that occur

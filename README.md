@@ -1,3 +1,5 @@
+
+
 # PDF Generator
 
 This project allows you to generate custom PDFs using JSON layouts and data. It uses `pdfmake` for PDF generation and `express` for serving the PDFs via an API.
@@ -331,9 +333,20 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `background`: The background color of the QR code, specified as a string (e.g., "yellow").
 
-  - `fit`: The size of the QR code, specified as a number.
+  - `fit`: The size of the QR code, specified as a number.\
+  
+### Output:
+- Output to base64 string 
+```js 
+  const pdfBase64 = await runPdfGenerator(jsonLayout, jsonData, "buffer");
+```
+
+- Output directly
+```js
+  await runPdfGenerator(jsonLayout, jsonData, "direct", res);
+```
+
 
 ### Conclusion
 
  This project provides a flexible and customizable way to generate PDFs using JSON layouts and data. By defining the layout structure and content in JSON format, you can easily create custom PDFs with different elements such as text, images, tables, and QR codes. The use of styles allows you to apply custom formatting to the content, making it easy to create professional-looking PDFs. With the ability to reference static and JSON data, you can dynamically generate PDFs based on different data sources.
-

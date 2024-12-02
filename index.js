@@ -9,25 +9,17 @@ const readJson = require('./readJson.js');
 app.get('/', async (req, res) => {
 	try {
 		const jsonLayout = await readJson('sample_1.json');
-		const jsonData = await readJson('data/sample_1.json');
-		const pdfBuffer = await runPdfGenerator(jsonLayout, jsonData, "buffer");
-		
+        const jsonData = await readJson('data/sample_1.json');
 
-		res.send('PDF has been saved to file.')	
-		// Choose output method based on a query parameter
-		//const outputToFile = req.query.output === 'file';
-
-		//console.log(pdfBuffer);
+        //directly send pdf to client for testing
+        await runPdfGenerator(jsonLayout, jsonData, "direct", res);
 
 
-		// Check if 'output=file' is in the query string
+        //base64 pdf and send to client
+        //const pdfBase64 = await runPdfGenerator(jsonLayout, jsonData, "buffer");
+        //res.send('Buffer PDF has been sent to client.');    
+       // console.log(pdfBase64);
 
-		// Run the PDF generator with the selected output option
-		
-		//console
-		//if (outputToFile) {
-			//res.send('PDF has been saved to file.');
-	//	}
 	} catch (error) {
 		console.error('Error processing request:', error);
 		res.status(500).send('Error processing request');

@@ -5,10 +5,12 @@ const dayjs = require('dayjs'); // Library for handling date formatting
 const pdfMakePrinter = require('pdfmake'); // PDF generation library
 
 
+/*
 let fs;
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
     fs = require('fs'); // Node.js module for file system operations
 }
+*/
 
 // Utility function to check if a variable is a string
 function isString(variable) {
@@ -444,12 +446,15 @@ const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
             pdfDoc.pipe(res);
             pdfDoc.end();
         } else {
+			throw new Error('Invalid type or response object not provided');
+			/*
 			if (fs) {
             pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
             pdfDoc.end(); // Finish writing the PDF
 			} else {
 				throw new Error('File system not available');
 			}
+				*/
         }
 	} catch (error) {
 		throw new Error(`PDF generation failed: ${error.message}`);

@@ -1,5 +1,5 @@
 //genPDF.js
-
+//TODO  to support front end removed a few things.. goal will be to make it work with front end and backend
 // Import necessary libraries
 const dayjs = require('dayjs'); // Library for handling date formatting
 //const pdfMakePrinter = require('pdfmake'); // PDF generation library
@@ -430,6 +430,13 @@ const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
 
 		
 		if (type === 'buffer') {
+			return new Promise((resolve, reject) => {
+                pdfMake.createPdf(docDefinition).getBase64(base64 => {
+                    const base64WithMimeType = `data:application/pdf;base64,${base64}`;
+                    resolve(base64WithMimeType);
+                });
+            });
+			/*
             let chunks = [];
             pdfDoc.on('data', (chunk) => {
                 chunks.push(chunk);
@@ -449,6 +456,7 @@ const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
     
                 pdfDoc.end();
             });
+			*/
         } else if (type === 'direct' && res !== null) {
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', 'inline; filename=output.pdf');

@@ -2,8 +2,8 @@
 
 // Import necessary libraries
 const dayjs = require('dayjs'); // Library for handling date formatting
-//const pdfMakePrinter = require('pdfmake'); // PDF generation library
-import pdfMakePrinter from "pdfmake";
+const pdfMakePrinter = require('pdfmake'); // PDF generation library
+
 
 /*
 let fs;
@@ -446,7 +446,7 @@ const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
             pdfDoc.pipe(res);
             pdfDoc.end();
         } else {
-			throw new Error('Invalid type or response object not provided');
+			
 			/*
 			if (fs) {
             pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path

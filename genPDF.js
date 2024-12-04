@@ -6,8 +6,8 @@ const pdfMakePrinter = require('pdfmake'); // PDF generation library
 
 
 let fs;
-if (typeof window === 'undefined') {
-    fs = require('fs');
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    fs = require('fs'); // Node.js module for file system operations
 }
 
 // Utility function to check if a variable is a string

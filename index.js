@@ -1,5 +1,5 @@
 // index.js
-const runPdfGenerator = require('./genPDF.js');
+const {pdfBase64, runPdfGenerator} = require('./genPDF.js');
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,3 +30,7 @@ app.get('/', async (req, res) => {
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
+
+module.exports = {
+    pdfBase64
+}

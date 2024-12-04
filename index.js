@@ -1,6 +1,8 @@
+import genFrontPdf from './components/frontEnd';
+
 // index.js
-const runPdfGenerator = require('./genPDF.js');
-/*
+/*const runPdfGenerator = require('./genPDF.js');
+
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +34,6 @@ app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
 */
-export const pdfBase64 = async (layout, data) => {
-    return await runPdfGenerator(layout, data, 'buffer');
+export const pdfFrontBase64 = async (layout, data) => {
+    return await genFrontPdf(layout, data);
 };

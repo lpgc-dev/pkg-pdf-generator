@@ -2,8 +2,8 @@
 
 // Import necessary libraries
 const dayjs = require('dayjs'); // Library for handling date formatting
-const pdfMakePrinter = require('pdfmake'); // PDF generation library
-
+//const pdfMakePrinter = require('pdfmake'); // PDF generation library
+import pdfMakePrinter from "pdfmake";
 
 /*
 let fs;

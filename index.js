@@ -1,14 +1,15 @@
 // index.js
 const {pdfBase64, runPdfGenerator} = require('./genPDF.js');
+/*
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const readJson = require('./readJson.js');
+//const readJson = require('./readJson.js');
 
 
 app.get('/', async (req, res) => {
 	try {
-		const jsonLayout = await readJson('sample_1.json');
+		//const jsonLayout = await readJson('sample_1.json');
         const jsonData = await readJson('data/sample_1.json');
 
         //directly send pdf to client for testing
@@ -30,7 +31,7 @@ app.get('/', async (req, res) => {
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
-
+*/
 module.exports = {
     pdfBase64
 }

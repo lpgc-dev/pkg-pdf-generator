@@ -40,7 +40,7 @@ function getValueBasedOnType(input, obj) {
 }
 
 // Main function to generate content based on layout
-const object = (layout, data = null, static = null, isSolo = false, jsonData) => {
+const object = (layout, data = null, staticData = null, isSolo = false, jsonData) => {
 	let valueData = layout.value ?? ''; // Default value from layout
 	let itemStyle = null; // Variable for item style
 
@@ -59,7 +59,7 @@ const object = (layout, data = null, static = null, isSolo = false, jsonData) =>
 		if (valueData[0] === '$') {
 			// Remove the '$' and get the value from the static object
 			const removeFirst = valueData.slice(1);
-			valueData = getValueFromPath(static, removeFirst);
+			valueData = getValueFromPath(staticData, removeFirst);
 		} else {
 			// Get value from the jsonData object
 			valueData = getValueFromPath(jsonData, valueData);
@@ -78,7 +78,7 @@ const object = (layout, data = null, static = null, isSolo = false, jsonData) =>
 			// Check if obj.value is an object and handle recursively
 			const checkObject2 = checkObject(obj.value);
 			if (checkObject2) {
-				return object(obj.value, null, static, true, jsonData);
+				return object(obj.value, null, staticData, true, jsonData);
 			}
 
 			// Set itemStyle if specified in the condition
@@ -145,7 +145,7 @@ function checkObject(input) {
 }
 
 // Function to create a table structure for the PDF
-const tableObject = (layout, data, static) => {
+const tableObject = (layout, data, staticData) => {
 	const table = {}; // Initialize table object
 	if (layout.widths) table.widths = layout.widths; // Set column widths if defined
 	if (layout.width) table.width = layout.width; // Set table width if defined
@@ -163,7 +163,7 @@ const tableObject = (layout, data, static) => {
 			if (checkHeaderArray) {
 				if (layout.headerData[0] === '$') {
 					const removeFirst = layout.headerData.slice(1);
-					headerData = getValueFromPath(static, removeFirst);
+					headerData = getValueFromPath(staticData, removeFirst);
 				} else {
 					headerData = getValueFromPath(data, layout.headerData);
 				}
@@ -189,13 +189,13 @@ const tableObject = (layout, data, static) => {
 					if (isArray) {
 						if (cell.value[0] === '$') {
 							const removeFirst = cell.value.slice(1);
-							cellData = getValueFromPath(static, removeFirst);
+							cellData = getValueFromPath(staticData, removeFirst);
 						} else {
 							cellData = getValueFromPath(data, cell.value);
 						}
 					}
 				}
-				return object(cell, cellData, static, false, data); // Return formatted cell content
+				return object(cell, cellData, staticData, false, data); // Return formatted cell content
 			});
 
 			// Add padding to header row if needed to match `maxColumns`
@@ -209,7 +209,7 @@ const tableObject = (layout, data, static) => {
 		let rowData = null;
 		if (layout.rowData !== undefined && layout.rowData !== null) {
 			if (layout.rowData === '$') {
-				rowData = getValueFromPath(static, layout.rowData);
+				rowData = getValueFromPath(staticData, layout.rowData);
 			} else {
 				rowData = getValueFromPath(data, layout.rowData);
 			}
@@ -232,21 +232,21 @@ const tableObject = (layout, data, static) => {
 				const tableRow = layout.body.rows.map((cell, index) => {
 					let cellData = null;
 					if (cell.type === 'table' && rowData !== null && cell.rowData !== undefined && cell.rowData !== null) {
-						return tableObject(cell, row, static); // Handle nested tables recursively
+						return tableObject(cell, row, staticData); // Handle nested tables recursively
 						
 					} else {
 						const isArray = Array.isArray(cell.value);
 						if (isArray) {
 							cellData = getValueFromPath(row, cell.value); // Get cell data from row
 							if (cell.value === "table") {
-								return tableObject(cell, data, static); // Handle table cell content
+								return tableObject(cell, data, staticData); // Handle table cell content
 							} else {
-								return object(cell, cellData, static, false, data); // Create cell content
+								return object(cell, cellData, staticData, false, data); // Create cell content
 							}
 						} else {
 							cellData = cell.value; // Direct value for the cell
 							
-							return object(cell, cellData, static, false, data); // Return formatted cell content
+							return object(cell, cellData, staticData, false, data); // Return formatted cell content
 						}
 					}
 				});
@@ -263,9 +263,9 @@ const tableObject = (layout, data, static) => {
 			for (const row of layout.body.rows) {
 				const tableRow = row.map((cell, index) => {
 					if (cell.type === "table") {
-						return tableObject(cell, data, static); // Handle nested table cell content
+						return tableObject(cell, data, staticData); // Handle nested table cell content
 					} else {
-						return object(cell, null, static, false, data); // Create standard cell content
+						return object(cell, null, staticData, false, data); // Create standard cell content
 					}
 				});
 

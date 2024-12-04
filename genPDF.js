@@ -4,8 +4,10 @@
 const dayjs = require('dayjs'); // Library for handling date formatting
 //const pdfMakePrinter = require('pdfmake'); // PDF generation library
 import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-
+// Register the fonts with pdfMake
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 /*
 let fs;
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
@@ -326,7 +328,7 @@ const tableObject = (layout, data, staticData) => {
 const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
 	try {
 		//temp remove fonts
-		const pdf = new pdfMake(); // Create a new PDF printer instance
+		const pdf = new pdfMake.createPdf();// Create a new PDF printer instance
 
 		// Initialize document definition with styles
 		let docDefinition = {

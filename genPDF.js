@@ -3,7 +3,12 @@
 // Import necessary libraries
 const dayjs = require('dayjs'); // Library for handling date formatting
 const pdfMakePrinter = require('pdfmake'); // PDF generation library
-const fs = require('fs'); // Node.js module for file system operations
+
+
+let fs;
+if (typeof window === 'undefined') {
+    fs = require('fs');
+}
 
 // Utility function to check if a variable is a string
 function isString(variable) {

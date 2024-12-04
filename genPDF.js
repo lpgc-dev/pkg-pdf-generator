@@ -444,8 +444,12 @@ const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
             pdfDoc.pipe(res);
             pdfDoc.end();
         } else {
+			if (fs) {
             pdfDoc.pipe(fs.createWriteStream('output.pdf')); // Output file path
             pdfDoc.end(); // Finish writing the PDF
+			} else {
+				throw new Error('File system not available');
+			}
         }
 	} catch (error) {
 		throw new Error(`PDF generation failed: ${error.message}`);

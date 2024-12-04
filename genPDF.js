@@ -2,7 +2,8 @@
 
 // Import necessary libraries
 const dayjs = require('dayjs'); // Library for handling date formatting
-const pdfMakePrinter = require('pdfmake'); // PDF generation library
+//const pdfMakePrinter = require('pdfmake'); // PDF generation library
+import pdfMake from 'pdfmake/build/pdfmake';
 
 
 /*
@@ -18,6 +19,7 @@ function isString(variable) {
 }
 
 // Font configuration for PDFMake
+/*
 const fonts = {
 	Roboto: {
 		normal: 'assets/font/roboto/Roboto-Regular.ttf',
@@ -26,6 +28,7 @@ const fonts = {
 		bolditalics: 'assets/font/roboto/Roboto-BoldItalic.ttf'
 	}
 };
+*/
 
 // Function to retrieve a value based on its type from an object
 function getValueBasedOnType(input, obj) {
@@ -322,7 +325,8 @@ const tableObject = (layout, data, staticData) => {
 // Function to generate the PDF and save it to a file
 const runPdfGenerator = async (layout, data,  type = 'buffer',  res = null) => {
 	try {
-		const pdf = new pdfMakePrinter(fonts); // Create a new PDF printer instance
+		//temp remove fonts
+		const pdf = new pdfMake(); // Create a new PDF printer instance
 
 		// Initialize document definition with styles
 		let docDefinition = {

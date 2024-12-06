@@ -1,5 +1,4 @@
 
-
 # PDF Generator
 
 This project allows you to generate custom PDFs using JSON layouts and data. It uses `pdfmake` for PDF generation and `express` for serving the PDFs via an API.
@@ -10,7 +9,7 @@ To get started with the custom PDF generator, follow these steps:
 
 - Input JSON data in the `layout.json` file.
 
-- Input JSON data in the `data.json` file. 
+- Input JSON data in the `data.json` file.
 
 The `layout.json` file contains the layout structure of the PDF, including the header, footer, and body content. The `data.json` file contains the data to be used in the PDF.
 
@@ -24,11 +23,13 @@ Once you have input the JSON data, you can start the server and generate the PDF
 ### Installation
 
 1. Install dependencies:
+
     ```sh
     npm install
     ```
 
 2. Start the server:
+
     ```sh
     npm start
     ```
@@ -39,7 +40,7 @@ Start the server using:
 
 ### Barebones Example
 
-```json 
+```json
 {
     "static": {},
     "styles": {},
@@ -140,20 +141,21 @@ This barebones example provides a basic structure for creating a custom PDF layo
     }
 }
 ```
+
 ### Explanation
 
 - table: An object to define a table layout element:
- - type: The type of the layout element, set to "table".
+- type: The type of the layout element, set to "table".
 
- - widths: An array to define the widths of the columns.
+- widths: An array to define the widths of the columns.
 
- - margin: The margins of the table, specified as an array [left, top, right, bottom].
+- margin: The margins of the table, specified as an array [left, top, right, bottom].
 
- - layout: The layout of the table, can be set to `null`, `noBorders`,`headerLineOnly`, `lightHorizontalLines` or `outside`.
+- layout: The layout of the table, can be set to `null`, `noBorders`,`headerLineOnly`, `lightHorizontalLines` or `outside`.
 
- - rowData: A reference to the static or JSON data. For example, ["$", "name"] will refer to static data, while ["name"] will refer to JSON data.
+- rowData: A reference to the static or JSON data. For example, ["$", "name"] will refer to static data, while ["name"] will refer to JSON data.
 
- - headerData:  A reference to the static or JSON data. For example, ["$", "name"] will refer to static data, while ["name"] will refer to JSON data.
+- headerData:  A reference to the static or JSON data. For example, ["$", "name"] will refer to static data, while ["name"] will refer to JSON data.
 
 - body: An object to define the body of the table:
 
@@ -165,8 +167,6 @@ This barebones example provides a basic structure for creating a custom PDF layo
   - enable: A boolean value to enable or disable ignoring empty values.
 
   - value: An array of keys to ignore if the value is empty.
-
-
 
 ### Styles
 
@@ -218,7 +218,6 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `alignment`: The alignment of the text, can be set to "left", "center", "right", or "justify".
 
-
 ### Text Formated to Date
 
   ```json
@@ -254,7 +253,7 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
 ### Image
 
-```json 
+```json
   {
         "type": "image",
         "value": ["$", "logo"],
@@ -279,8 +278,7 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `height`: The height of the image, specified as a number.
 
-
-### SVG 
+### SVG
 
 ```json
  {                    
@@ -335,17 +333,25 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `fit`: The size of the QR code, specified as a number.\
   
-### Output:
-- Output to base64 string 
-```js 
-  const pdfBase64 = await runPdfGenerator(jsonLayout, jsonData, "buffer");
-```
+### Output
 
-- Output directly
+- Output to base64 string for frontend only
+
 ```js
-  await runPdfGenerator(jsonLayout, jsonData, "direct", res);
+  const pdfBase64 = await pdfFrontBase64(jsonLayout, jsonData);
 ```
 
+- Output to base64 for backend only
+
+```js
+  await pdfBackBase64(jsonLayout, jsonData);
+```
+
+- Output to detect either front or backend
+
+```js
+  await pdfBase64(jsonLayout, jsonData);
+```
 
 ### Conclusion
 

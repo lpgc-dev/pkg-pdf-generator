@@ -16,10 +16,10 @@ try {
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 4000;
-const readJson = require("./readJson.js");
 
 app.get("/", async (req, res) => {
   try {
+    const readJson = require("./readJson.js");
     const jsonLayout = await readJson("sample_1.json");
     const jsonData = await readJson("data/sample_1.json");
 

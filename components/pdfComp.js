@@ -121,7 +121,11 @@ const object = (
     // Handle date formatting if specified in the layout
     if (layout.format) {
       if (layout.format.type === "date") {
-        valueData = dayjs(valueData).format(layout.format.value); // Format date using dayjs
+        if (valueData === null || valueData === undefined) {
+          valueData = ""; // Set empty string if value is null or undefined
+        } else {
+          valueData = dayjs(valueData).format(layout.format.value); // Format date using dayjs
+        }
       }
     }
     // Return text content with optional alignment and style

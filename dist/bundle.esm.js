@@ -2050,7 +2050,14 @@ function requirePdfComp () {
 	if (hasRequiredPdfComp) return pdfComp;
 	hasRequiredPdfComp = 1;
 	const dayjs = requireDayjs_min(); // Library for handling date formatting
-	const { Buffer } = require$$0$5; // Buffer library for handling base64 encoding
+	// Detect environment
+	const isNode =
+	  typeof process !== "undefined" &&
+	  process.versions != null &&
+	  process.versions.node != null;
+
+	// Ensure Buffer is available
+	const Buffer = isNode ? commonjsGlobal.Buffer : require$$0$5.Buffer;
 	// Utility function to check if a variable is a string
 	function isString(variable) {
 	  return typeof variable === "string";
@@ -2165,7 +2172,11 @@ function requirePdfComp () {
 	    // Handle date formatting if specified in the layout
 	    if (layout.format) {
 	      if (layout.format.type === "date") {
-	        valueData = dayjs(valueData).format(layout.format.value); // Format date using dayjs
+	        if (valueData === null || valueData === undefined) {
+	          valueData = ""; // Set empty string if value is null or undefined
+	        } else {
+	          valueData = dayjs(valueData).format(layout.format.value); // Format date using dayjs
+	        }
 	      }
 	    }
 	    // Return text content with optional alignment and style

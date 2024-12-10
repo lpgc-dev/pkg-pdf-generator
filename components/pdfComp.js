@@ -1,4 +1,12 @@
 const dayjs = require("dayjs"); // Library for handling date formatting
+// Detect environment
+const isNode =
+  typeof process !== "undefined" &&
+  process.versions != null &&
+  process.versions.node != null;
+
+// Ensure Buffer is available
+const Buffer = isNode ? global.Buffer : require("buffer/").Buffer;
 // Utility function to check if a variable is a string
 function isString(variable) {
   return typeof variable === "string";

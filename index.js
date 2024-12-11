@@ -12,7 +12,7 @@ try {
 } catch (error) {
   console.warn("Unable to load one of the modules:", error.message);
 }
-/*
+
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 4000;
 app.get("/", async (req, res) => {
   try {
     const readJson = require("./readJson.js");
-    const jsonLayout = await readJson("sample_1.json");
-    const jsonData = await readJson("data/sample_1.json");
+    const jsonLayout = await readJson("condition.json");
+    const jsonData = await readJson("data/condition.json");
 
     // Generate the Base64 PDF string with prefix
     const base64Pdf = await genBackPdf(jsonLayout, jsonData);
@@ -49,8 +49,6 @@ app.listen(4000, () => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-*/
 
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);

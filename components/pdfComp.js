@@ -61,21 +61,45 @@ const object = (
   // Handle condition in the layout
   if (layout.condition) {
     let obj = getValueBasedOnType(valueData, layout.condition);
-    if (obj !== undefined && obj !== null) {
+    if (obj === null || obj === undefined || obj === "") {
+      if (layout.condition.isNUll) {
+        if (layout.condition.isNUll.type) {
+          if (layout.condition.isNUll.type === "table") {
+            // Handle table content
+            const table = tableObject(
+              layout.condition.isNUll,
+              data,
+              staticData
+            );
+            return table;
+          }
+        }
+        valueData = layout.condition.isNUll.value;
+      }
+    } else if (obj !== undefined && obj !== null) {
       // Update valueData if the condition has a string value
       if (isString(obj.value)) {
         valueData = obj.value;
       }
 
-      // Check if obj.value is an object and handle recursively
-      const checkObject2 = checkObject(obj.value);
-      if (checkObject2) {
-        return object(obj.value, null, staticData, true, jsonData);
-      }
+      if (obj.type) {
+        if (obj.type === "table") {
+          // Handle table content
+          const table = tableObject(obj, data, staticData);
+          return table;
+        }
+      } else {
+        // Check if obj.value is an object and handle recursively
+        const checkObject2 = checkObject(obj.value);
+        if (checkObject2) {
+          const tempObj = object(obj.value, null, staticData, true, jsonData);
+          return tempObj;
+        }
 
-      // Set itemStyle if specified in the condition
-      if (obj.style) {
-        itemStyle = obj.style;
+        // Set itemStyle if specified in the condition
+        if (obj.style) {
+          itemStyle = obj.style;
+        }
       }
     }
   }

@@ -3075,7 +3075,7 @@
           "item_order": 41,
           "sort_order": 1,
           "severity": null,
-          "likelyHood": null, 
+          "likelyHood": null,
           "action": null
         },
         {
@@ -3096,6 +3096,44 @@
           "severity": null,
           "likelyHood": null,
           "action": null
+        },
+        {
+          "id": 563,
+          "created_at": "2024-09-17T22:11:07.623554+00:00",
+          "company": "LPCrane",
+          "customer_id": "0",
+          "jsa_name": "Other Hazards",
+          "group_order": 20,
+          "jsa_group": "Other Hazards",
+          "page_title": "Other",
+          "mandatory": true,
+          "is_deleted": false,
+          "jsa_id": 524,
+          "job_cat": "Hoisting",
+          "item_order": 45,
+          "sort_order": 3,
+          "severity": 2,
+          "likelyHood": 2,
+          "action": 2
+        },
+        {
+          "id": 563,
+          "created_at": "2024-09-17T22:11:07.623554+00:00",
+          "company": "LPCrane",
+          "customer_id": "0",
+          "jsa_name": "Other Hazards",
+          "group_order": 20,
+          "jsa_group": "Other Hazards",
+          "page_title": "Other",
+          "mandatory": true,
+          "is_deleted": false,
+          "jsa_id": 524,
+          "job_cat": "Hoisting",
+          "item_order": 45,
+          "sort_order": 3,
+          "severity": 2,
+          "likelyHood": 2,
+          "action": 2
         }
       ],
       "totalCount": 17,

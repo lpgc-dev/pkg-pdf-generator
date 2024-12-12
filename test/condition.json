@@ -1,0 +1,171 @@
+{
+  "static": {},
+  "styles": {},
+  "setting": {
+    "output": "pdf",
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [20, 60, 40, 60]
+  },
+  "header": {
+    "margin": [20, 10, 20, 10],
+    "contents": []
+  },
+  "footer": {
+    "margin": [20, 20, 20, 20],
+    "contents": []
+  },
+  "body": {
+    "content": [
+      {
+        "type": "table",
+        "margin": [0, 2, 0, 0],
+        "layout": "noBorders",
+        "widths": ["*"],
+        "body": {
+          "rows": [
+            [
+              {
+                "type": "text",
+                "value": ["demo"],
+                "style": "value",
+                "alignment": "left",
+                "condition": {
+                  "type": [true, false],
+                  "true": { "value": "[YES]" },
+                  "false": { "value": "[NO]" }
+                }
+              }
+            ]
+          ]
+        }
+      },
+      {
+        "type": "table",
+        "margin": [0, 2, 0, 0],
+        "layout": "noBorders",
+        "widths": ["*"],
+        "body": {
+          "rows": [
+            [
+              {
+                "type": "text",
+                "value": ["demo_empty"],
+                "style": "value",
+                "alignment": "left",
+                "condition": {
+                  "type": [true, false],
+                  "true": { "value": "[YES]" },
+                  "isNUll": { "value": "N/A" }
+                }
+              }
+            ]
+          ]
+        }
+      },
+      {
+        "type": "table",
+        "margin": [0, 2, 0, 0],
+        "layout": "noBorders",
+        "widths": ["*"],
+        "body": {
+          "rows": [
+            [
+              {
+                "type": "text",
+                "value": ["demo_string"],
+                "style": "value",
+                "alignment": "left",
+                "condition": {
+                  "type": ["hello", "world"],
+                  "hello": { "value": "WORD" },
+                  "isNUll": { "value": "NOT" }
+                }
+              }
+            ]
+          ]
+        }
+      },
+      {
+        "type": "table",
+        "margin": [0, 2, 0, 0],
+        "layout": "noBorders",
+        "widths": ["*"],
+        "body": {
+          "rows": [
+            [
+              {
+                "type": "text",
+                "value": ["demo_table"],
+                "style": "value",
+                "alignment": "left",
+                "condition": {
+                  "type": ["table2", "world"],
+                  "table2": {
+                    "type": "table",
+                    "margin": [0, 2, 0, 0],
+                    "layout": "outside",
+                    "widths": ["*"],
+                    "body": {
+                      "rows": [
+                        [
+                          {
+                            "type": "text",
+                            "value": "TABLE DATA:",
+                            "style": "title",
+                            "alignment": "left"
+                          }
+                        ]
+                      ]
+                    }
+                  },
+                  "isNUll": { "value": "NOT" }
+                }
+              }
+            ]
+          ]
+        }
+      },
+      {
+        "type": "table",
+        "margin": [0, 2, 0, 0],
+        "layout": "noBorders",
+        "widths": ["*"],
+        "body": {
+          "rows": [
+            [
+              {
+                "type": "text",
+                "value": ["demo_no_match"],
+                "style": "value",
+                "alignment": "left",
+                "condition": {
+                  "type": ["table2", "world"],
+                  "world": { "value": "WORLD" },
+                  "isNUll": {
+                    "type": "table",
+                    "margin": [0, 2, 0, 0],
+                    "layout": "outside",
+                    "widths": ["*"],
+                    "body": {
+                      "rows": [
+                        [
+                          {
+                            "type": "text",
+                            "value": "SHOULD BE NULL",
+                            "style": "title",
+                            "alignment": "left"
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

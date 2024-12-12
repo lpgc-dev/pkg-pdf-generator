@@ -2114,21 +2114,45 @@ function requirePdfComp () {
 	  // Handle condition in the layout
 	  if (layout.condition) {
 	    let obj = getValueBasedOnType(valueData, layout.condition);
-	    if (obj !== undefined && obj !== null) {
+	    if (obj === null || obj === undefined || obj === "") {
+	      if (layout.condition.isNUll) {
+	        if (layout.condition.isNUll.type) {
+	          if (layout.condition.isNUll.type === "table") {
+	            // Handle table content
+	            const table = tableObject(
+	              layout.condition.isNUll,
+	              data,
+	              staticData
+	            );
+	            return table;
+	          }
+	        }
+	        valueData = layout.condition.isNUll.value;
+	      }
+	    } else if (obj !== undefined && obj !== null) {
 	      // Update valueData if the condition has a string value
 	      if (isString(obj.value)) {
 	        valueData = obj.value;
 	      }
 
-	      // Check if obj.value is an object and handle recursively
-	      const checkObject2 = checkObject(obj.value);
-	      if (checkObject2) {
-	        return object(obj.value, null, staticData, true, jsonData);
-	      }
+	      if (obj.type) {
+	        if (obj.type === "table") {
+	          // Handle table content
+	          const table = tableObject(obj, data, staticData);
+	          return table;
+	        }
+	      } else {
+	        // Check if obj.value is an object and handle recursively
+	        const checkObject2 = checkObject(obj.value);
+	        if (checkObject2) {
+	          const tempObj = object(obj.value, null, staticData, true, jsonData);
+	          return tempObj;
+	        }
 
-	      // Set itemStyle if specified in the condition
-	      if (obj.style) {
-	        itemStyle = obj.style;
+	        // Set itemStyle if specified in the condition
+	        if (obj.style) {
+	          itemStyle = obj.style;
+	        }
 	      }
 	    }
 	  }
@@ -2148,8 +2172,8 @@ function requirePdfComp () {
 	    let imageContent = {
 	      image: valueData // Set the image content
 	    };
-	    if (layout.width) imageContent.width = layout.width; // Set image width if specified
-	    if (layout.height) imageContent.height = layout.height; // Set image height if specified
+	    if (layout.width) imageContent.width = layout.width || 200; // Set image width if specified
+	    if (layout.height) imageContent.height = layout.height || 200; // Set image height if specified
 	    if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth; // Set image maxWidth if specified
 	    if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight; // Set image maxHeight if specified
 	    if (layout.alignment) imageContent.alignment = layout.alignment; // Set image alignment if specified
@@ -2354,7 +2378,11 @@ function requirePdfComp () {
 	    return null;
 	  }
 
+	  table.dontBreakRows = true; // Prevent row breaks
+	  table.keepWithHeaderRows = 1; // Keep header rows with content
+
 	  table.headerRows = 1; // Set the number of header rows
+
 	  let tempTable = { table: table }; // Create table structure
 	  if (layout.layout) {
 	    // Apply custom layout if specified
@@ -170275,6 +170303,7 @@ function requireCustom_pdf () {
 	} catch (error) {
 	  console.warn("Unable to load one of the modules:", error.message);
 	}
+
 	/*
 	const express = require("express");
 	const app = express();
@@ -170312,9 +170341,7 @@ function requireCustom_pdf () {
 	app.listen(PORT, () => {
 	  console.log(`Server is running on port ${PORT}`);
 	});
-
 	*/
-
 	const pdfFrontBase64 = async (layout, data) => {
 	  return await genFrontPdf(layout, data);
 	};

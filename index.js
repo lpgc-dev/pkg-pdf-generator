@@ -13,6 +13,7 @@ try {
   console.warn("Unable to load one of the modules:", error.message);
 }
 
+/*
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -49,7 +50,7 @@ app.listen(4000, () => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
+*/
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);
 };

@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 4000;
 app.get("/", async (req, res) => {
   try {
     const readJson = require("./readJson.js");
-    const jsonLayout = await readJson("condition.json");
-    const jsonData = await readJson("data/condition.json");
+    const jsonLayout = await readJson("sample_1.json");
+    const jsonData = await readJson("data/sample_1.json");
 
     // Generate the Base64 PDF string with prefix
     const base64Pdf = await genBackPdf(jsonLayout, jsonData);

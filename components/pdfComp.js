@@ -119,8 +119,8 @@ const object = (
     let imageContent = {
       image: valueData // Set the image content
     };
-    if (layout.width) imageContent.width = layout.width; // Set image width if specified
-    if (layout.height) imageContent.height = layout.height; // Set image height if specified
+    if (layout.width) imageContent.width = layout.width || 200; // Set image width if specified
+    if (layout.height) imageContent.height = layout.height || 200; // Set image height if specified
     if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth; // Set image maxWidth if specified
     if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight; // Set image maxHeight if specified
     if (layout.alignment) imageContent.alignment = layout.alignment; // Set image alignment if specified
@@ -325,7 +325,11 @@ const tableObject = (layout, data, staticData) => {
     return null;
   }
 
+  table.dontBreakRows = true; // Prevent row breaks
+  table.keepWithHeaderRows = 1; // Keep header rows with content
+
   table.headerRows = 1; // Set the number of header rows
+
   let tempTable = { table: table }; // Create table structure
   if (layout.layout) {
     // Apply custom layout if specified

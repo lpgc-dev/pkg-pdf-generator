@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import {Buffer} from "buffer"
 // Detect environment
 const isNode =
   typeof process !== "undefined" &&
@@ -6,7 +7,7 @@ const isNode =
   process.versions.node != null;
 
 // Ensure Buffer is available
-const Buffer = isNode ? global.Buffer : require("buffer/").Buffer;
+const BufferObj = isNode ? global.Buffer : Buffer;
 // Utility function to check if a variable is a string
 function isString(variable) {
   return typeof variable === "string";
@@ -130,7 +131,7 @@ const object = (
     const hasSignature =
       valueData && valueData.startsWith("data:image/svg+xml;base64,");
     const decodedSvg = hasSignature
-      ? Buffer.from(
+      ? BufferObj.from(
           valueData.replace("data:image/svg+xml;base64,", ""),
           "base64"
         ).toString("utf-8")

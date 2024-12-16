@@ -1,5 +1,5 @@
-import pdfDefinition from "./pdfComp.js"
-import pdfMakePrinter from "pdfmake"
+const pdfDefinition = require("./pdfComp"); // PDF layout definition
+const pdfMakePrinter = require("pdfmake");
 // Font configuration for PDFMake
 const fonts = {
   Roboto: {
@@ -39,4 +39,4 @@ const genBackPdf = async (layout, data) => {
   });
 };
 
-export default genBackPdf
+module.exports = genBackPdf;

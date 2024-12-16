@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+const dayjs = require("dayjs"); // Library for handling date formatting
 // Detect environment
 const isNode =
   typeof process !== "undefined" &&
@@ -471,4 +471,4 @@ const pdfDefinition = (layout, data) => {
     //return error; // Return error for handling
   }
 };
-export default pdfDefinition
+module.exports = pdfDefinition;

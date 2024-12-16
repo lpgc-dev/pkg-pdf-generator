@@ -1,11 +1,10 @@
 //genPDF.js
 //TODO  to support front end removed a few things.. goal will be to make it work with front end and backend
-const pdfDefinition = require("./components/pdfComp"); // PDF layout definition
+import pdfDefinition from "./components/pdfComp.js"
 
 // Import necessary libraries
 
-//const pdfMakePrinter = require('pdfmake'); // PDF generation library
-import pdfMake from "pdfmake/build/pdfmake";
+import pdfMake from "pdfmake";
 import roboto from "./assets/roboto/roboto";
 pdfMake.vfs = roboto;
 

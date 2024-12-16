@@ -24,4 +24,4 @@ const runPdfGenerator = async (layout, data, type = "buffer", res = null) => {
 };
 
 // Export the PDF generator function for use in other modules
-module.exports = runPdfGenerator;
+export default runPdfGenerator;

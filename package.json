@@ -1,5 +1,5 @@
 {
-  "name": "pdf-generator",
+  "name": "pkg-pdf-generator",
   "version": "1.0.0",
   "description": "A private PDF generator module",
   "main": "index.js",

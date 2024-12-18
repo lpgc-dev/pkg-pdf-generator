@@ -1,5 +1,5 @@
-import genFrontPdf from "./components/frontEnd"
-import genBackPdf from "./components/backEnd"
+import genFrontPdf from "./components/frontEnd";
+import genBackPdf from "./components/backEnd";
 
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);
@@ -20,8 +20,4 @@ const pdfBase64 = async (layout, data) => {
   }
 };
 
-export default {
-  pdfFrontBase64,
-  pdfBackBase64,
-  pdfBase64
-};
+export { pdfFrontBase64, pdfBackBase64, pdfBase64 };

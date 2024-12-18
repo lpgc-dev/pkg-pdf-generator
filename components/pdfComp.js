@@ -1,5 +1,19 @@
 import dayjs from "dayjs";
-import {Buffer} from "buffer"
+import { Buffer } from "buffer";
+
+const evaluateCondition = (conditionString, data) => {
+  if (typeof conditionString !== "string" || conditionString.trim() === "") {
+    return true; // Default to true if no valid condition is provided
+  }
+  try {
+    return new Function(...Object.keys(data), `return ${conditionString};`)(
+      ...Object.values(data)
+    );
+  } catch (error) {
+    console.error("Error evaluating condition:", error);
+    return false;
+  }
+};
 // Detect environment
 const isNode =
   typeof process !== "undefined" &&
@@ -25,6 +39,164 @@ function getValueBasedOnType(input, obj) {
     return "";
   }
 }
+const generateSignatureTable = (content, data) => {
+  // Utility function to get a nested value based on path
+  const getValueFromPath = (obj, path) => {
+    return path.reduce(
+      (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+      obj
+    );
+  };
+
+  // Function to decode base64-encoded SVG
+  const decodeBase64Svg = (base64Data) => {
+    if (base64Data.startsWith("data:image/svg+xml;base64,")) {
+      const base64String = base64Data.replace("data:image/svg+xml;base64,", "");
+      return Buffer.from(base64String, "base64").toString("utf-8");
+    }
+    return base64Data; // Return raw string if not base64-encoded
+  };
+
+  // Check if the attendees exist and have valid data
+  const rowData = getValueFromPath(data, content.rowData) || [];
+  const itemsPerRow = content.itemsPerRow || 2; // Default to 2 items per row
+  const tableBody = [];
+  let currentRow = [];
+
+  // Title with a border (no bottom border)
+  const titleWithBorder = {
+    table: {
+      widths: ["*"], // Full width
+      body: [
+        [
+          {
+            text: content.title ?? "Signatures", // Default title if not provided
+            alignment: "center",
+            margin: [10, 5, 10, 5], // Add margin inside the border
+            fontSize: 14,
+            bold: true
+          }
+        ]
+      ]
+    },
+    layout: {
+      hLineWidth: (i) => (i === 0 ? 1 : 0), // Top horizontal line only
+      vLineWidth: () => 1, // Vertical lines
+      hLineColor: () => "#000000", // Horizontal line color
+      vLineColor: () => "#000000" // Vertical line color
+    }
+  };
+
+  // If no attendees exist, return only the title with an empty table
+  if (!Array.isArray(rowData) || rowData.length === 0) {
+    return {
+      stack: [
+        titleWithBorder,
+        {
+          table: {
+            widths: Array(itemsPerRow).fill("*"), // Default column widths
+            body: [
+              [
+                {
+                  text: content.placeholder ?? "No signatures available",
+                  colSpan: itemsPerRow,
+                  alignment: "center"
+                }
+              ]
+            ],
+            layout: "noBorders" // Optional: remove borders for the empty state
+          }
+        }
+      ]
+    };
+  }
+
+  // Iterate over attendees and create signature cells
+  rowData.forEach((attendee) => {
+    let signatureData = getValueFromPath(attendee, content.signature) || ""; // Get SVG data
+
+    // Decode base64 if applicable
+    signatureData = decodeBase64Svg(signatureData);
+
+    // Validate and provide fallback for SVG
+    if (!signatureData.startsWith("<svg")) {
+      console.warn("Invalid SVG data:", signatureData);
+      signatureData = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50">
+        <rect width="100" height="50" fill="#ccc"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#000" font-size="10">
+          Invalid SVG
+        </text>
+      </svg>`;
+    }
+
+    const displayName =
+      getValueFromPath(attendee, content.displayNames) || "Unknown"; // Get attendee name
+
+    // Create the signature cell
+    const signatureCell = {
+      stack: [
+        {
+          svg: signatureData,
+          width: 100,
+          height: 30,
+          alignment: "center"
+        },
+        {
+          text: displayName,
+          alignment: "center",
+          margin: [0, 5, 0, 0],
+          fontSize: 10, // Make the font size smaller
+          color: "grey" // Set the color to grey
+        }
+      ],
+      margin: [0, 0, 0, 0]
+    };
+
+    // Add cell to current row
+    currentRow.push(signatureCell);
+
+    // If the row reaches itemsPerRow, push it to the tableBody
+    if (currentRow.length === itemsPerRow) {
+      tableBody.push(currentRow);
+      currentRow = []; // Reset row
+    }
+  });
+
+  // Handle cases with one remaining row
+  if (currentRow.length === 1 && tableBody.length === 0) {
+    // Only one signature, center it on the page
+    return {
+      stack: [
+        titleWithBorder,
+        {
+          table: {
+            widths: ["*"], // Single column width
+            body: [currentRow]
+          }
+        }
+      ]
+    };
+  } else if (currentRow.length > 0) {
+    // Fill remaining cells for incomplete rows
+    while (currentRow.length < itemsPerRow) {
+      currentRow.push({ text: "" }); // Add placeholders
+    }
+    tableBody.push(currentRow);
+  }
+
+  // Construct the table
+  return {
+    stack: [
+      titleWithBorder,
+      {
+        table: {
+          widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
+          body: tableBody
+        }
+      }
+    ]
+  };
+};
 
 // Main function to generate content based on layout
 const object = (
@@ -34,6 +206,14 @@ const object = (
   isSolo = false,
   jsonData
 ) => {
+  if (layout.visible)
+    if (evaluateCondition(layout.visible, data) === false) {
+      // Check if the object should be visible based on a condition
+      return {
+        text: ""
+      };
+    }
+
   let valueData = layout.value ?? ""; // Default value from layout
   let itemStyle = null; // Variable for item style
 
@@ -85,6 +265,10 @@ const object = (
 
       if (obj.type) {
         if (obj.type === "table") {
+          if (obj.visible)
+            if (evaluateCondition(obj.visible, data) === false) {
+              return null;
+            }
           // Handle table content
           const table = tableObject(obj, data, staticData);
           return table;
@@ -276,12 +460,20 @@ const tableObject = (layout, data, staticData) => {
             cell.rowData !== undefined &&
             cell.rowData !== null
           ) {
+            if (cell.visible)
+              if (evaluateCondition(cell.visible, data) === false) {
+                return null;
+              }
             return tableObject(cell, row, staticData); // Handle nested tables recursively
           } else {
             const isArray = Array.isArray(cell.value);
             if (isArray) {
               cellData = getValueFromPath(row, cell.value); // Get cell data from row
               if (cell.value === "table") {
+                if (cell.visible)
+                  if (evaluateCondition(cell.visible, data) === false) {
+                    return null;
+                  }
                 return tableObject(cell, data, staticData); // Handle table cell content
               } else {
                 return object(cell, cellData, staticData, false, data); // Create cell content
@@ -306,6 +498,10 @@ const tableObject = (layout, data, staticData) => {
       for (const row of layout.body.rows) {
         const tableRow = row.map((cell, index) => {
           if (cell.type === "table") {
+            if (cell.visible)
+              if (evaluateCondition(cell.visible, data) === false) {
+                return null;
+              }
             return tableObject(cell, data, staticData); // Handle nested table cell content
           } else {
             return object(cell, null, staticData, false, data); // Create standard cell content
@@ -326,10 +522,14 @@ const tableObject = (layout, data, staticData) => {
     return null;
   }
 
-  table.dontBreakRows = true; // Prevent row breaks
-  table.keepWithHeaderRows = 1; // Keep header rows with content
-
   table.headerRows = 1; // Set the number of header rows
+
+  if (layout.dontBreakRows) {
+    table.dontBreakRows = true; // Prevent row breaks
+  }
+  if (layout.keepWithHeaderRows) {
+    table.keepWithHeaderRows = layout.keepWithHeaderRows; // Keep header rows with content
+  }
 
   let tempTable = { table: table }; // Create table structure
   if (layout.layout) {
@@ -371,6 +571,7 @@ const tableObject = (layout, data, staticData) => {
 };
 
 const pdfDefinition = (layout, data) => {
+  console.log("layout", data);
   try {
     //temp remove fonts
 
@@ -415,6 +616,11 @@ const pdfDefinition = (layout, data) => {
     if (layout.body) {
       for (const content of layout.body.content) {
         if (content.type === "table") {
+          if (content.visible)
+            if (evaluateCondition(content.visible, data) === false) {
+              continue;
+            }
+
           const table = tableObject(content, data, layout.static);
 
           //docDefinition.content.push(tableObject(content, data, layout.static)); // Add table content
@@ -423,9 +629,15 @@ const pdfDefinition = (layout, data) => {
             docDefinition.content.push(table);
           }
         } else if (content.type === "columns") {
+          if (content.visible)
+            if (evaluateCondition(content.visible, data) === false) continue;
           const columns = [];
           for (const column of content.contents) {
             if (column.type === "table") {
+              if (column.visible)
+                if (evaluateCondition(column.visible, data) === false) {
+                  continue;
+                }
               const table = tableObject(
                 column,
                 data,
@@ -437,6 +649,9 @@ const pdfDefinition = (layout, data) => {
                 columns.push(table);
               }
               //columns.push(tableObject(column, data, layout.static, true, data)); // Add table column
+            } else if (column.type === "signature") {
+              const signatureTable = generateSignatureTable(column, data); // Generate signature table
+              columns.push(signatureTable); // Add signature table to columns
             } else {
               columns.push(object(column, data, layout.static, true, data)); // Add regular column content
             }
@@ -448,6 +663,9 @@ const pdfDefinition = (layout, data) => {
           if (content.width) columnData.width = content.width; // Set column width if specified
 
           docDefinition.content.push(columnData); // Add columns to document content
+        } else if (content.type === "signature") {
+          const signatureTable = generateSignatureTable(content, data); // Generate signature table
+          docDefinition.content.push(signatureTable); // Add signature table to document content
         }
       }
     }
@@ -472,4 +690,4 @@ const pdfDefinition = (layout, data) => {
     //return error; // Return error for handling
   }
 };
-export default pdfDefinition
+export default pdfDefinition;

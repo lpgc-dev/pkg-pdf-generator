@@ -131,6 +131,8 @@ This barebones example provides a basic structure for creating a custom PDF layo
     "layout": null,
     "rowData": null,
     "headerData": null,
+    "dontBreakRows": true,
+    "keepWithHeaderRows": 1,
     "ignoreEmpty": {
         "enable": true,
         "value": ["severity", "likelyHood"]
@@ -167,6 +169,10 @@ This barebones example provides a basic structure for creating a custom PDF layo
   - enable: A boolean value to enable or disable ignoring empty values.
 
   - value: An array of keys to ignore if the value is empty.
+
+- dontBreakRows: A boolean value to prevent breaking rows across pages.
+
+- keepWithHeaderRows: A number to specify the number of header rows to keep with the body.
 
 ### Styles
 
@@ -331,8 +337,48 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `background`: The background color of the QR code, specified as a string (e.g., "yellow").
 
-  - `fit`: The size of the QR code, specified as a number.\
-  
+  - `fit`: The size of the QR code, specified as a number.
+
+### Signature
+
+```json
+ {
+            "type": "signature",
+            "title": "Signature",
+            "rowData": ["attendees"],
+            "signature": ["signatureData"],
+            "placeholder": "No signatures available",
+            "displayNames": ["attendeeName"],
+            "itemsPerRow": 2
+          }
+```
+
+## Explanation
+
+- signature: An object to define a signature layout element:
+
+- `type`: The type of the layout element, set to "signature".
+
+- `title`: The title of the signature element.
+
+- `rowData`: A reference to the JSON data. For example, ["attendees"] will refer to JSON data.
+
+- `signature`: A reference to the JSON data. For example, ["signatureData"] will refer to JSON data.
+
+- `placeholder`: The placeholder text to display if no signatures are available.
+
+- `displayNames`: reference to the JSON data. For example, ["attendeeName"] will refer to JSON data.
+
+- `itemsPerRow`: The number of signature items to display per row.
+
+### Others
+
+- `"visible": "attachments.length > 0"`: To make the element visible based on the condition.(attachments is an array)
+
+- `"visible": "isApproved"`: To make the element visible based on the condition.(isApproved is a boolean)
+
+- `"visible": "attachments.length > 0 && isApproved"`: To make the element visible based on the condition.(attachments is an array and isApproved is a boolean)
+
 ### Output
 
 - Output to base64 string for frontend only

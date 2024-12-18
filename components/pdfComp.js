@@ -571,7 +571,7 @@ const tableObject = (layout, data, staticData) => {
 };
 
 const pdfDefinition = (layout, data) => {
-  console.log("layout", data);
+  // console.log("layout", data);
   try {
     //temp remove fonts
 

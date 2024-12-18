@@ -1,5 +1,5 @@
-import genFrontPdf from "./components/frontEnd";
-import genBackPdf from "./components/backEnd";
+import genFrontPdf from "./components/frontEnd.js";
+import genBackPdf from "./components/backEnd.js";
 
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);

@@ -12,6 +12,7 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "dayjs": "^1.11.13",
+    "image-size": "^1.2.0",
     "pdfmake": "0.2.15"
   },
   "devDependencies": {

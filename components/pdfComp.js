@@ -309,6 +309,7 @@ const object = (
     if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth; // Set image maxWidth if specified
     if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight; // Set image maxHeight if specified
     if (layout.alignment) imageContent.alignment = layout.alignment; // Set image alignment if specified
+    if (layout.fit) imageContent.fit = layout.fit; // Set image fit if specified
     return imageContent; // Return image content
   } else if (layout.type === "svg") {
     // Check if valueData is a base64-encoded SVG

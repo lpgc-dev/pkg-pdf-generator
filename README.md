@@ -284,6 +284,8 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 
   - `height`: The height of the image, specified as a number.
 
+  - `fit`: The fit of the image array width and height. example `[650, 575]`
+
 ### SVG
 
 ```json

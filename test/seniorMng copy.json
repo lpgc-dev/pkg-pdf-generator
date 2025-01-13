@@ -1,0 +1,70 @@
+{
+  "body": {
+    "content": [
+      {
+        "body": {
+          "rows": [
+            {
+              "body": {
+                "rows": [
+                  {
+                    "type": "text",
+                    "style": "item",
+                    "value": ["jsa_name"],
+                    "alignment": "left"
+                  }
+                ],
+                "header": [
+                  {
+                    "style": "header",
+                    "value": ["jsa_group"]
+                  }
+                ]
+              },
+              "type": "table",
+              "layout": null,
+              "margin": [0, 0, 0, 0],
+              "widths": ["100%"],
+              "rowData": ["data"],
+              "dontBreakRows": true
+            }
+          ]
+        },
+        "type": "array",
+        "rowData": ["jsaItems"]
+      }
+    ]
+  },
+  "footer": {
+    "margin": [20, 20, 20, 20],
+    "contents": []
+  },
+  "header": {
+    "margin": [20, 10, 20, 10],
+    "contents": []
+  },
+  "static": {},
+  "styles": {
+    "title": {
+      "bold": true
+    },
+    "header": {
+      "bold": true,
+      "color": "white",
+      "fontSize": 9,
+      "alignment": "center",
+      "fillColor": "#f57f29"
+    },
+    "header2": {
+      "bold": true,
+      "fontSize": 12,
+      "fillColor": "#dcdcdc"
+    }
+  },
+  "setting": {
+    "size": "LETTER",
+    "margin": [20, 60, 40, 60],
+    "output": "pdf",
+    "orientation": "landscape"
+  }
+}

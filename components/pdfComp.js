@@ -66,6 +66,8 @@ const generateSignatureTable = (content, data) => {
   // Title with a border (no bottom border)
   const titleWithBorder = {
     table: {
+      dontBreakRows: true, // Keep title and table on the same page
+      headerRows: 0,
       widths: ["*"], // Full width
       body: [
         [
@@ -104,6 +106,8 @@ const generateSignatureTable = (content, data) => {
                 }
               ]
             ],
+            headerRows: 0,
+
             layout: "noBorders" // Optional: remove borders for the empty state
           }
         }
@@ -171,7 +175,9 @@ const generateSignatureTable = (content, data) => {
         {
           table: {
             widths: ["*"], // Single column width
-            body: [currentRow]
+            body: [currentRow],
+            headerRows: 0,
+            keepWithHeaderRows: 1
           }
         }
       ]
@@ -191,7 +197,8 @@ const generateSignatureTable = (content, data) => {
       {
         table: {
           widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
-          body: tableBody
+          body: tableBody,
+          headerRows: 0
         }
       }
     ]
@@ -486,8 +493,11 @@ const tableObject = (layout, data, staticData) => {
     return null;
   }
 
-  table.headerRows = 1;
-
+  if (layout.headerRows !== undefined) {
+    table.headerRows = layout.headerRows;
+  } else {
+    table.headerRows = 1;
+  }
   if (layout.dontBreakRows) {
     table.dontBreakRows = true;
   }
@@ -630,10 +640,10 @@ const pdfDefinition = (layout, data) => {
           const signatureTable = generateSignatureTable(content, data); // Generate signature table
           docDefinition.content.push(signatureTable); // Add signature table to document content
         } else if (content.type === "array") {
-          
-          
+          const arrayData = processArray(content, data, layout);
+          docDefinition.content.push(arrayData);
+          //console.log("arrayData", arrayData);
         }
-
       }
     }
 
@@ -650,12 +660,32 @@ const pdfDefinition = (layout, data) => {
 
       docDefinition.footer = col; // Set document footer
     }
-    console.log("docDefinition", JSON.stringify(docDefinition));
+    // console.log("docDefinition", JSON.stringify(docDefinition));
     return docDefinition;
   } catch (error) {
     throw new Error(`PDF generation failed: ${error.message}`);
     //console.log(error); // Log any errors that occur
     //return error; // Return error for handling
   }
+};
+
+const processArray = (content, data, staticData) => {
+  const rowData = getValueFromPath(data, content.rowData) || [];
+  let definedArray = [];
+  for (let i = 0; i < rowData.length; i++) {
+    const item = rowData[i];
+    const contentArray = content.content;
+    for (let j = 0; j < contentArray.length; j++) {
+      const itemContent = contentArray[j];
+      if (itemContent.type === "array") {
+        const arrayData = processArray(itemContent, item, staticData);
+        definedArray.push(arrayData);
+      } else if (itemContent.type === "table") {
+        const table = tableObject(itemContent, item, staticData);
+        definedArray.push(table);
+      }
+    }
+  }
+  return definedArray;
 };
 export default pdfDefinition;

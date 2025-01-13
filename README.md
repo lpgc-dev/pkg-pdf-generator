@@ -133,6 +133,7 @@ This barebones example provides a basic structure for creating a custom PDF layo
     "headerData": null,
     "dontBreakRows": true,
     "keepWithHeaderRows": 1,
+    "headerRows": 0
     "ignoreEmpty": {
         "enable": true,
         "value": ["severity", "likelyHood"]
@@ -173,6 +174,8 @@ This barebones example provides a basic structure for creating a custom PDF layo
 - dontBreakRows: A boolean value to prevent breaking rows across pages.
 
 - keepWithHeaderRows: A number to specify the number of header rows to keep with the body.
+
+- headerRows: A number to specify the number of header rows.
 
 ### Styles
 
@@ -372,6 +375,22 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 - `displayNames`: reference to the JSON data. For example, ["attendeeName"] will refer to JSON data.
 
 - `itemsPerRow`: The number of signature items to display per row.
+
+### Array
+
+```json
+{
+    "type": "array",
+    "rowData": ["data"],
+    "content": []
+}
+```
+
+## Explanation
+
+- type: The type of the layout element, set to "array".
+- rowData: A reference to the JSON data. For example, ["data"] will refer to JSON data array.
+- content: An array to hold the contents of table.
 
 ### Others
 

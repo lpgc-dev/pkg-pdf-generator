@@ -67,7 +67,7 @@ const generateSignatureTable = (content, data) => {
   // Title with a border (no bottom border)
   const titleWithBorder = {
     table: {
-      dontBreakRows: true, // Keep title and table on the same page
+      dontBreakRows: true, // Keep title & table content from splitting row by row
       headerRows: 0,
       widths: ["*"], // Full width
       body: [
@@ -93,6 +93,8 @@ const generateSignatureTable = (content, data) => {
   // If no attendees exist, return only the title with an empty table
   if (!Array.isArray(rowData) || rowData.length === 0) {
     return {
+      // unbreakable so the title & placeholder aren't split
+      unbreakable: true,
       stack: [
         titleWithBorder,
         {
@@ -108,7 +110,6 @@ const generateSignatureTable = (content, data) => {
               ]
             ],
             headerRows: 0,
-
             layout: "noBorders" // Optional: remove borders for the empty state
           }
         }
@@ -125,7 +126,6 @@ const generateSignatureTable = (content, data) => {
 
     // Validate and provide fallback for SVG
     if (!signatureData.startsWith("<svg")) {
-      console.warn("Invalid SVG data:", signatureData);
       signatureData = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50">
         <rect width="100" height="50" fill="#ccc"/>
         <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#000" font-size="10">
@@ -134,14 +134,16 @@ const generateSignatureTable = (content, data) => {
       </svg>`;
     }
 
+    // Name and optional attendeeType
     const displayName =
       getValueFromPath(attendee, content.displayNames) || "Unknown"; // Get attendee name
+
     const isAttendeeTypeEnabled = !!content.attendeeType;
     if (isAttendeeTypeEnabled === true) {
       attendeeTypeValue = attendee.attendeeType || null;
     }
 
-    // Create the signature cell
+    // Build the cell
     const signatureCell = {
       stack: [
         {
@@ -154,11 +156,11 @@ const generateSignatureTable = (content, data) => {
           text: displayName,
           alignment: "center",
           margin: [0, 5, 0, 0],
-          fontSize: 11, // Make the font size smaller
-          color: "#545454" // Set the color to grey
+          fontSize: 11,
+          color: "#545454"
         },
-
-        ...(isAttendeeTypeEnabled === true && attendeeTypeValue
+        // If attendeeType is enabled and there's a non-null value, show it
+        ...(isAttendeeTypeEnabled && attendeeTypeValue
           ? [
               {
                 text: attendeeTypeValue,
@@ -187,6 +189,7 @@ const generateSignatureTable = (content, data) => {
   if (currentRow.length === 1 && tableBody.length === 0) {
     // Only one signature, center it on the page
     return {
+      unbreakable: true, // Keep entire block together
       stack: [
         titleWithBorder,
         {
@@ -194,7 +197,8 @@ const generateSignatureTable = (content, data) => {
             widths: ["*"], // Single column width
             body: [currentRow],
             headerRows: 0,
-            keepWithHeaderRows: 1
+            keepWithHeaderRows: 1,
+            dontBreakRows: true
           }
         }
       ]
@@ -207,15 +211,19 @@ const generateSignatureTable = (content, data) => {
     tableBody.push(currentRow);
   }
 
-  // Construct the table
+  // Build and return the full table
   return {
+    // unbreakable attempts to keep the entire stack on one page
+    unbreakable: true,
     stack: [
       titleWithBorder,
       {
         table: {
           widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
           body: tableBody,
-          headerRows: 0
+          headerRows: 0,
+          keepWithHeaderRows: 1,
+          dontBreakRows: true
         }
       }
     ]
@@ -561,7 +569,7 @@ const tableObject = (layout, data, staticData) => {
 };
 
 const pdfDefinition = (layout, data) => {
-  console.log("layout", data);
+  //console.log("layout", data);
   try {
     //temp remove fonts
 

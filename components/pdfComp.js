@@ -66,6 +66,8 @@ const generateSignatureTable = (content, data) => {
   // Title with a border (no bottom border)
   const titleWithBorder = {
     table: {
+      dontBreakRows: true, // Keep title and table on the same page
+      headerRows: 0,
       widths: ["*"], // Full width
       body: [
         [
@@ -104,6 +106,8 @@ const generateSignatureTable = (content, data) => {
                 }
               ]
             ],
+            headerRows: 0,
+
             layout: "noBorders" // Optional: remove borders for the empty state
           }
         }
@@ -171,7 +175,9 @@ const generateSignatureTable = (content, data) => {
         {
           table: {
             widths: ["*"], // Single column width
-            body: [currentRow]
+            body: [currentRow],
+            headerRows: 0,
+            keepWithHeaderRows: 1
           }
         }
       ]
@@ -191,7 +197,8 @@ const generateSignatureTable = (content, data) => {
       {
         table: {
           widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
-          body: tableBody
+          body: tableBody,
+          headerRows: 0
         }
       }
     ]
@@ -206,18 +213,15 @@ const object = (
   isSolo = false,
   jsonData
 ) => {
-  if (layout.visible)
-    if (evaluateCondition(layout.visible, data) === false) {
-      // Check if the object should be visible based on a condition
-      return {
-        text: ""
-      };
-    }
+  if (layout.visible && evaluateCondition(layout.visible, data) === false) {
+    return {
+      text: ""
+    };
+  }
 
-  let valueData = layout.value ?? ""; // Default value from layout
-  let itemStyle = null; // Variable for item style
+  let valueData = layout.value ?? "";
+  let itemStyle = null;
 
-  // Set valueData based on data provided if isSolo is false
   if (isSolo === false) {
     if (data !== null) {
       valueData = data;
@@ -226,62 +230,42 @@ const object = (
     }
   }
 
-  // Check if valueData is an array and process accordingly
   const checkHeaderArray = Array.isArray(valueData);
   if (checkHeaderArray) {
     if (valueData[0] === "$") {
-      // Remove the '$' and get the value from the static object
       const removeFirst = valueData.slice(1);
       valueData = getValueFromPath(staticData, removeFirst);
     } else {
-      // Get value from the jsonData object
       valueData = getValueFromPath(jsonData, valueData);
     }
   }
 
-  // Handle condition in the layout
   if (layout.condition) {
     let obj = getValueBasedOnType(valueData, layout.condition);
     if (obj === null || obj === undefined || obj === "") {
-      if (layout.condition.isNUll) {
-        if (layout.condition.isNUll.type) {
-          if (layout.condition.isNUll.type === "table") {
-            // Handle table content
-            const table = tableObject(
-              layout.condition.isNUll,
-              data,
-              staticData
-            );
-            return table;
-          }
-        }
-        valueData = layout.condition.isNUll.value;
+      if (layout.condition.isNUll && layout.condition.isNUll.type === "table") {
+        const table = tableObject(layout.condition.isNUll, data, staticData);
+        return table;
       }
+      valueData = layout.condition.isNUll ? layout.condition.isNUll.value : "";
     } else if (obj !== undefined && obj !== null) {
-      // Update valueData if the condition has a string value
       if (isString(obj.value)) {
         valueData = obj.value;
       }
 
-      if (obj.type) {
-        if (obj.type === "table") {
-          if (obj.visible)
-            if (evaluateCondition(obj.visible, data) === false) {
-              return null;
-            }
-          // Handle table content
-          const table = tableObject(obj, data, staticData);
-          return table;
+      if (obj.type === "table") {
+        if (obj.visible && evaluateCondition(obj.visible, data) === false) {
+          return null;
         }
+        const table = tableObject(obj, data, staticData);
+        return table;
       } else {
-        // Check if obj.value is an object and handle recursively
         const checkObject2 = checkObject(obj.value);
         if (checkObject2) {
           const tempObj = object(obj.value, null, staticData, true, jsonData);
           return tempObj;
         }
 
-        // Set itemStyle if specified in the condition
         if (obj.style) {
           itemStyle = obj.style;
         }
@@ -289,30 +273,28 @@ const object = (
     }
   }
 
-  // Handle different layout types (e.g., QR, image, SVG)
   if (layout.type === "qr") {
     const qrContent = {
-      qr: valueData // Set the QR content
+      qr: valueData
     };
-    if (layout.foreground) qrContent.foreground = layout.foreground; // Set QR foreground color if specified
-    if (layout.background) qrContent.background = layout.background; // Set QR background color if specified
-    if (layout.fit) qrContent.fit = layout.fit; // Set QR size if specified
-    return qrContent; // Return QR content
+    if (layout.foreground) qrContent.foreground = layout.foreground;
+    if (layout.background) qrContent.background = layout.background;
+    if (layout.fit) qrContent.fit = layout.fit;
+    return qrContent;
   }
 
   if (layout.type === "image") {
     let imageContent = {
-      image: valueData // Set the image content
+      image: valueData
     };
-    if (layout.width) imageContent.width = layout.width || 200; // Set image width if specified
-    if (layout.height) imageContent.height = layout.height || 200; // Set image height if specified
-    if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth; // Set image maxWidth if specified
-    if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight; // Set image maxHeight if specified
-    if (layout.alignment) imageContent.alignment = layout.alignment; // Set image alignment if specified
-    if (layout.fit) imageContent.fit = layout.fit; // Set image fit if specified
-    return imageContent; // Return image content
+    if (layout.width) imageContent.width = layout.width || 200;
+    if (layout.height) imageContent.height = layout.height || 200;
+    if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth;
+    if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight;
+    if (layout.alignment) imageContent.alignment = layout.alignment;
+    if (layout.fit) imageContent.fit = layout.fit;
+    return imageContent;
   } else if (layout.type === "svg") {
-    // Check if valueData is a base64-encoded SVG
     const hasSignature =
       valueData && valueData.startsWith("data:image/svg+xml;base64,");
     const decodedSvg = hasSignature
@@ -322,27 +304,23 @@ const object = (
         ).toString("utf-8")
       : null;
     let svgContent = {
-      svg: decodedSvg // Set the SVG content
+      svg: decodedSvg
     };
-    if (layout.width) svgContent.width = layout.width; // Set SVG width if specified
-    if (layout.height) svgContent.height = layout.height; // Set SVG height if specified
-    return svgContent; // Return SVG content
+    if (layout.width) svgContent.width = layout.width;
+    if (layout.height) svgContent.height = layout.height;
+    return svgContent;
   } else {
-    // Handle date formatting if specified in the layout
-    if (layout.format) {
-      if (layout.format.type === "date") {
-        if (valueData === null || valueData === undefined) {
-          valueData = ""; // Set empty string if value is null or undefined
-        } else {
-          valueData = dayjs(valueData).format(layout.format.value); // Format date using dayjs
-        }
+    if (layout.format && layout.format.type === "date") {
+      if (valueData === null || valueData === undefined) {
+        valueData = "";
+      } else {
+        valueData = dayjs(valueData).format(layout.format.value);
       }
     }
-    // Return text content with optional alignment and style
     return {
       text: valueData,
-      alignment: layout.alignment ?? "left", // Default alignment is left
-      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText" // Apply style if available
+      alignment: layout.alignment ?? "left",
+      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText"
     };
   }
 };
@@ -363,20 +341,18 @@ function checkObject(input) {
 
 // Function to create a table structure for the PDF
 const tableObject = (layout, data, staticData) => {
-  const table = {}; // Initialize table object
-  if (layout.widths) table.widths = layout.widths; // Set column widths if defined
-  if (layout.width) table.width = layout.width; // Set table width if defined
+  const table = {};
+  if (layout.widths) table.widths = layout.widths;
+  if (layout.width) table.width = layout.width;
 
   if (layout.body) {
-    table.body = []; // Initialize table body
+    table.body = [];
 
-    // Calculate the maximum number of columns in the table
     const maxColumns = Math.max(
       layout.body.header ? layout.body.header.length : 0,
       ...layout.body.rows.map((row) => row.length)
     );
 
-    // Add the header row if it exists
     if (layout.body.header) {
       let headerData = null;
       const checkHeaderArray = Array.isArray(layout.headerData);
@@ -388,13 +364,11 @@ const tableObject = (layout, data, staticData) => {
           headerData = getValueFromPath(data, layout.headerData);
         }
       }
-      // Check if header data is an object
       const checkObject2 = checkObject(layout.headerData);
       if (checkObject2) {
         headerData = getValueFromPath(data, layout.headerData);
       }
 
-      // Create header row by mapping over each cell
       const headerRow = layout.body.header.map((cell, index) => {
         let cellData = null;
         if (headerData !== null) {
@@ -416,17 +390,15 @@ const tableObject = (layout, data, staticData) => {
             }
           }
         }
-        return object(cell, cellData, staticData, false, data); // Return formatted cell content
+        return object(cell, cellData, staticData, false, data);
       });
 
-      // Add padding to header row if needed to match `maxColumns`
       while (headerRow.length < maxColumns) {
-        headerRow.push({ text: "", style: "normalText" }); // Add empty cells
+        headerRow.push({ text: "", style: "normalText" });
       }
-      table.body.push(headerRow); // Add header row to table body
+      table.body.push(headerRow);
     }
 
-    // Add table rows with optional padding for uneven cells
     let rowData = null;
     if (layout.rowData !== undefined && layout.rowData !== null) {
       if (layout.rowData === "$") {
@@ -436,7 +408,6 @@ const tableObject = (layout, data, staticData) => {
       }
     }
     if (rowData !== null) {
-      // Apply ignoreEmpty logic if specified
       if (layout.ignoreEmpty?.enable && layout.ignoreEmpty?.value) {
         rowData = rowData.filter(
           (row) =>
@@ -451,7 +422,6 @@ const tableObject = (layout, data, staticData) => {
         );
       }
 
-      // Iterate over each row of data and create table rows
       for (const row of rowData) {
         const tableRow = layout.body.rows.map((cell, index) => {
           let cellData = null;
@@ -461,114 +431,116 @@ const tableObject = (layout, data, staticData) => {
             cell.rowData !== undefined &&
             cell.rowData !== null
           ) {
-            if (cell.visible)
-              if (evaluateCondition(cell.visible, data) === false) {
-                return null;
-              }
-            return tableObject(cell, row, staticData); // Handle nested tables recursively
+            if (
+              cell.visible &&
+              evaluateCondition(cell.visible, data) === false
+            ) {
+              return null;
+            }
+            return tableObject(cell, row, staticData);
           } else {
             const isArray = Array.isArray(cell.value);
             if (isArray) {
-              cellData = getValueFromPath(row, cell.value); // Get cell data from row
+              cellData = getValueFromPath(row, cell.value);
               if (cell.value === "table") {
-                if (cell.visible)
-                  if (evaluateCondition(cell.visible, data) === false) {
-                    return null;
-                  }
-                return tableObject(cell, data, staticData); // Handle table cell content
+                if (
+                  cell.visible &&
+                  evaluateCondition(cell.visible, data) === false
+                ) {
+                  return null;
+                }
+                return tableObject(cell, data, staticData);
               } else {
-                return object(cell, cellData, staticData, false, data); // Create cell content
+                return object(cell, cellData, staticData, false, data);
               }
             } else {
-              cellData = cell.value; // Direct value for the cell
-
-              return object(cell, cellData, staticData, false, data); // Return formatted cell content
+              cellData = cell.value;
+              return object(cell, cellData, staticData, false, data);
             }
           }
         });
 
-        // Add padding to row if needed to match `maxColumns`
         while (tableRow.length < maxColumns) {
-          tableRow.push({ text: "" }); // Add empty cells
+          tableRow.push({ text: "", style: "normalText" });
         }
-        //console.log(tableRow);
-        table.body.push(tableRow); // Add row to table body
+        table.body.push(tableRow);
       }
     } else {
-      // Handle cases where no row data is specified
       for (const row of layout.body.rows) {
         const tableRow = row.map((cell, index) => {
           if (cell.type === "table") {
-            if (cell.visible)
-              if (evaluateCondition(cell.visible, data) === false) {
-                return null;
-              }
-            return tableObject(cell, data, staticData); // Handle nested table cell content
+            if (
+              cell.visible &&
+              evaluateCondition(cell.visible, data) === false
+            ) {
+              return null;
+            }
+            return tableObject(cell, data, staticData);
           } else {
-            return object(cell, null, staticData, false, data); // Create standard cell content
+            return object(cell, null, staticData, false, data);
           }
         });
 
-        // Add padding to row if needed to match `maxColumns`
         while (tableRow.length < maxColumns) {
-          tableRow.push({ text: "" }); // Add empty cells
+          tableRow.push({ text: "", style: "normalText" });
         }
-        table.body.push(tableRow); // Add row to table body
+        table.body.push(tableRow);
       }
     }
   }
 
-  // If the table has no rows (header only), return null
   if (table.body.length <= (layout.body.header ? 1 : 0)) {
     return null;
   }
 
-  table.headerRows = 1; // Set the number of header rows
-
+  if (layout.headerRows !== undefined) {
+    table.headerRows = layout.headerRows;
+  } else {
+    table.headerRows = 1;
+  }
   if (layout.dontBreakRows) {
-    table.dontBreakRows = true; // Prevent row breaks
+    table.dontBreakRows = true;
   }
   if (layout.keepWithHeaderRows) {
-    table.keepWithHeaderRows = layout.keepWithHeaderRows; // Keep header rows with content
+    table.keepWithHeaderRows = layout.keepWithHeaderRows;
   }
 
-  let tempTable = { table: table }; // Create table structure
+  let tempTable = { table: table };
   if (layout.layout) {
-    // Apply custom layout if specified
     if (layout.layout === "outside") {
       tempTable.layout = {
         hLineWidth: function (i, node) {
-          return i === 0 || i === node.table.body.length ? 1 : 0; // Draw lines only on the outer border
+          return i === 0 || i === node.table.body.length ? 1 : 0;
         },
         vLineWidth: function (i, node) {
-          return i === 0 || i === node.table.widths.length ? 1 : 0; // Draw lines only on the outer border
+          return i === 0 || i === node.table.widths.length ? 1 : 0;
         },
         hLineColor: function (i, node) {
-          return "black"; // Set color for horizontal lines
+          return "black";
         },
         vLineColor: function (i, node) {
-          return "black"; // Set color for vertical lines
+          return "black";
         },
         paddingLeft: function (i, node) {
-          return 4; // Left padding for cells
+          return 4;
         },
         paddingRight: function (i, node) {
-          return 4; // Right padding for cells
+          return 4;
         },
         paddingTop: function (i, node) {
-          return 2; // Top padding for cells
+          return 2;
         },
         paddingBottom: function (i, node) {
-          return 2; // Bottom padding for cells
+          return 2;
         }
       };
     } else {
-      tempTable.layout = layout.layout; // Apply provided layout
+      tempTable.layout = layout.layout;
     }
   }
-  if (layout.margin) tempTable.margin = layout.margin; // Apply margin if defined
+  if (layout.margin) tempTable.margin = layout.margin;
 
-  return tempTable; // Return the complete table object
+  return tempTable;
 };
 
 const pdfDefinition = (layout, data) => {
@@ -667,6 +639,10 @@ const pdfDefinition = (layout, data) => {
         } else if (content.type === "signature") {
           const signatureTable = generateSignatureTable(content, data); // Generate signature table
           docDefinition.content.push(signatureTable); // Add signature table to document content
+        } else if (content.type === "array") {
+          const arrayData = processArray(content, data, layout);
+          docDefinition.content.push(arrayData);
+          //console.log("arrayData", arrayData);
         }
       }
     }
@@ -684,11 +660,32 @@ const pdfDefinition = (layout, data) => {
 
       docDefinition.footer = col; // Set document footer
     }
+    // console.log("docDefinition", JSON.stringify(docDefinition));
     return docDefinition;
   } catch (error) {
     throw new Error(`PDF generation failed: ${error.message}`);
     //console.log(error); // Log any errors that occur
     //return error; // Return error for handling
   }
+};
+
+const processArray = (content, data, staticData) => {
+  const rowData = getValueFromPath(data, content.rowData) || [];
+  let definedArray = [];
+  for (let i = 0; i < rowData.length; i++) {
+    const item = rowData[i];
+    const contentArray = content.content;
+    for (let j = 0; j < contentArray.length; j++) {
+      const itemContent = contentArray[j];
+      if (itemContent.type === "array") {
+        const arrayData = processArray(itemContent, item, staticData);
+        definedArray.push(arrayData);
+      } else if (itemContent.type === "table") {
+        const table = tableObject(itemContent, item, staticData);
+        definedArray.push(table);
+      }
+    }
+  }
+  return definedArray;
 };
 export default pdfDefinition;

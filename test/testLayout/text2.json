@@ -1,0 +1,94 @@
+{
+  "static": {},
+  "styles": {
+    "title": { "bold": true },
+    "header": {
+      "bold": true,
+      "color": "white",
+      "fontSize": 9,
+      "alignment": "center",
+      "fillColor": "#f57f29",
+      "noWrap": false
+    },
+    "header2": {
+      "bold": true,
+      "fontSize": 12,
+      "noWrap": false,
+      "fillColor": "#dcdcdc"
+    },
+    "item": { "fontSize": 10, "noWrap": false, "alignment": "left" }
+  },
+  "setting": {
+    "output": "pdf",
+    "size": "LETTER",
+    "orientation": "landscape",
+    "margin": [20, 60, 40, 60]
+  },
+  "header": {
+    "margin": [20, 10, 20, 10],
+    "contents": []
+  },
+  "footer": {
+    "margin": [20, 20, 20, 20],
+    "contents": []
+  },
+  "body": {
+    "content": [
+      {
+        "type": "columns",
+        "columnGap": 10,
+        "contents": [
+          {
+            "body": {
+              "rows": [
+                {
+                  "body": {
+                    "rows": [
+                      {
+                        "type": "text",
+                        "style": "item",
+                        "value": ["jsa_name"],
+                        "alignment": "left"
+                      },
+                      {
+                        "type": "text",
+                        "style": "item",
+                        "value": ["apply", "strVal"],
+                        "alignment": "left"
+                      },
+                      {
+                        "type": "text",
+                        "style": "item",
+                        "value": ["recommendedAction"],
+                        "alignment": "left"
+                      }
+                    ],
+                    "header": [
+                      { "style": "header2", "value": ["jsa_group"] },
+                      { "style": "header2", "value": "" },
+                      { "style": "header2", "value": "" }
+                    ]
+                  },
+                  "type": "table",
+                  "layout": null,
+                  "margin": [0, 0, 0, 0],
+                  "widths": ["*", "auto", "auto"],
+                  "rowData": ["data"],
+                  "dontBreakRows": true,
+                  "keepWithHeaderRows": 1
+                }
+              ]
+            },
+            "type": "table",
+            "layout": "noBorders",
+            "margin": [0, 2, 0, 0],
+            "widths": ["*"],
+            "rowData": ["jsaItems"],
+            "dontBreakRows": true,
+            "keepWithHeaderRows": 1
+          }
+        ]
+      }
+    ]
+  }
+}

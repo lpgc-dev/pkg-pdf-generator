@@ -41,6 +41,7 @@ function getValueBasedOnType(input, obj) {
 }
 const generateSignatureTable = (content, data) => {
   // Utility function to get a nested value based on path
+  let attendeeTypeValue = null; // Initialize attendee type value
   const getValueFromPath = (obj, path) => {
     return path.reduce(
       (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
@@ -135,6 +136,10 @@ const generateSignatureTable = (content, data) => {
 
     const displayName =
       getValueFromPath(attendee, content.displayNames) || "Unknown"; // Get attendee name
+    const isAttendeeTypeEnabled = !!content.attendeeType;
+    if (isAttendeeTypeEnabled === true) {
+      attendeeTypeValue = attendee.attendeeType || null;
+    }
 
     // Create the signature cell
     const signatureCell = {
@@ -149,9 +154,21 @@ const generateSignatureTable = (content, data) => {
           text: displayName,
           alignment: "center",
           margin: [0, 5, 0, 0],
-          fontSize: 10, // Make the font size smaller
-          color: "grey" // Set the color to grey
-        }
+          fontSize: 11, // Make the font size smaller
+          color: "#545454" // Set the color to grey
+        },
+
+        ...(isAttendeeTypeEnabled === true && attendeeTypeValue
+          ? [
+              {
+                text: attendeeTypeValue,
+                alignment: "center",
+                margin: [0, 2, 0, 0],
+                fontSize: 10,
+                color: "grey"
+              }
+            ]
+          : [])
       ],
       margin: [0, 0, 0, 0]
     };
@@ -544,7 +561,7 @@ const tableObject = (layout, data, staticData) => {
 };
 
 const pdfDefinition = (layout, data) => {
-  // console.log("layout", data);
+  console.log("layout", data);
   try {
     //temp remove fonts
 

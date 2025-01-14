@@ -354,7 +354,8 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
             "signature": ["signatureData"],
             "placeholder": "No signatures available",
             "displayNames": ["attendeeName"],
-            "itemsPerRow": 2
+            "itemsPerRow": 2,
+            "attendeeType": true,
           }
 ```
 
@@ -375,6 +376,8 @@ decoration: string | string[]: the text decoration to apply (‘underline’ or 
 - `displayNames`: reference to the JSON data. For example, ["attendeeName"] will refer to JSON data.
 
 - `itemsPerRow`: The number of signature items to display per row.
+
+- `attendeeType`: A boolean value to display the attendee type.
 
 ### Array
 

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "nodemon index.js",
+    "start_test": "nodemon test.js",
     "build": "rollup -c"
   },
   "license": "ISC",

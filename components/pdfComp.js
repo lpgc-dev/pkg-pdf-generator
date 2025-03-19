@@ -77,17 +77,17 @@ const generateSignatureTable = (content, data) => {
             alignment: "center",
             margin: [10, 5, 10, 5], // Add margin inside the border
             fontSize: 14,
-            bold: true
-          }
-        ]
-      ]
+            bold: true,
+          },
+        ],
+      ],
     },
     layout: {
       hLineWidth: (i) => (i === 0 ? 1 : 0), // Top horizontal line only
       vLineWidth: () => 1, // Vertical lines
       hLineColor: () => "#000000", // Horizontal line color
-      vLineColor: () => "#000000" // Vertical line color
-    }
+      vLineColor: () => "#000000", // Vertical line color
+    },
   };
 
   // If no attendees exist, return only the title with an empty table
@@ -105,15 +105,15 @@ const generateSignatureTable = (content, data) => {
                 {
                   text: content.placeholder ?? "No signatures available",
                   colSpan: itemsPerRow,
-                  alignment: "center"
-                }
-              ]
+                  alignment: "center",
+                },
+              ],
             ],
             headerRows: 0,
-            layout: "noBorders" // Optional: remove borders for the empty state
-          }
-        }
-      ]
+            layout: "noBorders", // Optional: remove borders for the empty state
+          },
+        },
+      ],
     };
   }
 
@@ -150,14 +150,14 @@ const generateSignatureTable = (content, data) => {
           svg: signatureData,
           width: 100,
           height: 30,
-          alignment: "center"
+          alignment: "center",
         },
         {
           text: displayName,
           alignment: "center",
           margin: [0, 5, 0, 0],
           fontSize: 11,
-          color: "#545454"
+          color: "#545454",
         },
         // If attendeeType is enabled and there's a non-null value, show it
         ...(isAttendeeTypeEnabled && attendeeTypeValue
@@ -167,12 +167,12 @@ const generateSignatureTable = (content, data) => {
                 alignment: "center",
                 margin: [0, 2, 0, 0],
                 fontSize: 10,
-                color: "grey"
-              }
+                color: "grey",
+              },
             ]
-          : [])
+          : []),
       ],
-      margin: [0, 0, 0, 0]
+      margin: [0, 0, 0, 0],
     };
 
     // Add cell to current row
@@ -198,10 +198,10 @@ const generateSignatureTable = (content, data) => {
             body: [currentRow],
             headerRows: 0,
             keepWithHeaderRows: 1,
-            dontBreakRows: true
-          }
-        }
-      ]
+            dontBreakRows: true,
+          },
+        },
+      ],
     };
   } else if (currentRow.length > 0) {
     // Fill remaining cells for incomplete rows
@@ -223,10 +223,10 @@ const generateSignatureTable = (content, data) => {
           body: tableBody,
           headerRows: 0,
           keepWithHeaderRows: 1,
-          dontBreakRows: true
-        }
-      }
-    ]
+          dontBreakRows: true,
+        },
+      },
+    ],
   };
 };
 
@@ -240,7 +240,7 @@ const object = (
 ) => {
   if (layout.visible && evaluateCondition(layout.visible, data) === false) {
     return {
-      text: ""
+      text: "",
     };
   }
 
@@ -300,7 +300,7 @@ const object = (
 
   if (layout.type === "qr") {
     const qrContent = {
-      qr: valueData
+      qr: valueData,
     };
     if (layout.foreground) qrContent.foreground = layout.foreground;
     if (layout.background) qrContent.background = layout.background;
@@ -310,7 +310,7 @@ const object = (
 
   if (layout.type === "image") {
     let imageContent = {
-      image: valueData
+      image: valueData,
     };
     if (layout.width) imageContent.width = layout.width || 200;
     if (layout.height) imageContent.height = layout.height || 200;
@@ -329,7 +329,7 @@ const object = (
         ).toString("utf-8")
       : null;
     let svgContent = {
-      svg: decodedSvg
+      svg: decodedSvg,
     };
     if (layout.width) svgContent.width = layout.width;
     if (layout.height) svgContent.height = layout.height;
@@ -342,10 +342,21 @@ const object = (
         valueData = dayjs(valueData).format(layout.format.value);
       }
     }
+    // Copy everything from layout except type, value, alignment and style
+    const additionalProps = Object.entries(layout).reduce(
+      (acc, [key, value]) => {
+        if (!["type", "value", "alignment", "style"].includes(key)) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {}
+    );
     return {
       text: valueData,
       alignment: layout.alignment ?? "left",
-      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText"
+      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText",
+      ...additionalProps
     };
   }
 };
@@ -417,7 +428,6 @@ const tableObject = (layout, data, staticData) => {
         }
         return object(cell, cellData, staticData, false, data);
       });
-
       while (headerRow.length < maxColumns) {
         headerRow.push({ text: "", style: "normalText" });
       }
@@ -432,6 +442,7 @@ const tableObject = (layout, data, staticData) => {
         rowData = getValueFromPath(data, layout.rowData);
       }
     }
+
     if (rowData !== null) {
       if (layout.ignoreEmpty?.enable && layout.ignoreEmpty?.value) {
         rowData = rowData.filter(
@@ -493,6 +504,7 @@ const tableObject = (layout, data, staticData) => {
     } else {
       for (const row of layout.body.rows) {
         const tableRow = row.map((cell, index) => {
+          // console.log("cell : ", cell);
           if (cell.type === "table") {
             if (
               cell.visible &&
@@ -506,6 +518,7 @@ const tableObject = (layout, data, staticData) => {
           }
         });
 
+        // console.log(`tableRow : ${tableRow.length} : ${maxColumns} :`, tableRow);
         while (tableRow.length < maxColumns) {
           tableRow.push({ text: "", style: "normalText" });
         }
@@ -557,7 +570,34 @@ const tableObject = (layout, data, staticData) => {
         },
         paddingBottom: function (i, node) {
           return 2;
-        }
+        },
+      };
+    } else if (layout.layout === "onlyVerticalLinesWithClosedBorders") {
+      tempTable.layout = {
+        hLineWidth: function (i, node) {
+          return i === 0 || i === 1 || i === node.table.body.length ? 1 : 0; // Horizontal lines for header and bottom
+        },
+        vLineWidth: function (i, node) {
+          return 1; // All vertical lines
+        },
+        vLineColor: function (i, node) {
+          return "black";
+        },
+        hLineColor: function (i, node) {
+          return "black";
+        },
+        paddingLeft: function (i, node) {
+          return 4;
+        },
+        paddingRight: function (i, node) {
+          return 4;
+        },
+        paddingTop: function (i, node) {
+          return 2;
+        },
+        paddingBottom: function (i, node) {
+          return 2;
+        },
       };
     } else {
       tempTable.layout = layout.layout;
@@ -578,12 +618,12 @@ const pdfDefinition = (layout, data) => {
       styles: {
         normalText: {
           fontSize: 12, // Set default font size
-          margin: [0, 5, 0, 5] // Set default margin for text
-        }
+          margin: [0, 5, 0, 5], // Set default margin for text
+        },
       },
       pageOrientation: layout.setting.orientation ?? "portrait", // Set page orientation, default to portrait
       pageSize: layout.setting.size ?? "LETTER", // Set page size, default to LETTER
-      pageMargins: layout.setting.margin ?? [20, 60, 40, 60] // Set page margins, default values
+      pageMargins: layout.setting.margin ?? [20, 60, 40, 60], // Set page margins, default values
     };
 
     // Merge additional styles from layout
@@ -591,8 +631,8 @@ const pdfDefinition = (layout, data) => {
       ...layout.styles,
       normalText: {
         fontSize: 12,
-        margin: [0, 5, 0, 5]
-      }
+        margin: [0, 5, 0, 5],
+      },
     };
     docDefinition.styles = updatedStyles; // Apply updated styles
 
@@ -603,7 +643,7 @@ const pdfDefinition = (layout, data) => {
         headerObj.push(object(header, data, layout.static, true, data)); // Generate header content
       }
       const col = {
-        columns: headerObj // Create columns for header content
+        columns: headerObj, // Create columns for header content
       };
       if (layout.header.margin) col.margin = layout.header.margin; // Apply header margin if specified
 
@@ -655,7 +695,7 @@ const pdfDefinition = (layout, data) => {
             }
           }
           const columnData = {
-            columns: columns // Create columns for body content
+            columns: columns, // Create columns for body content
           };
           if (content.columnGap) columnData.columnGap = content.columnGap; // Apply column gap if defined
           if (content.width) columnData.width = content.width; // Set column width if specified
@@ -674,16 +714,54 @@ const pdfDefinition = (layout, data) => {
 
     // Handle document footer if specified in layout
     if (layout.footer) {
-      let footerObj = [];
+      let footerContent = [];
+
+      // Generate footer content first
       for (const footer of layout.footer.contents) {
-        footerObj.push(object(footer, data, layout.static, true, data)); // Generate footer content
+        footerContent.push(object(footer, data, layout.static, true, data)); // Generate footer content
       }
+
+      let footerObj = [];
+
+      // Add divider above footer by default unless explicitly set to false
+      const showDivider = layout.footer.showDivider !== false;
+      if (showDivider) {
+        footerObj.push({
+          stack: [
+            {
+              canvas: [{
+                type: 'line',
+                x1: 0,
+                y1: 0,
+                x2: 570,
+                y2: 0,
+                lineWidth: 1
+              }]
+            },
+            {
+              columns: footerContent
+            }
+          ]
+        });
+      } else {
+        footerObj.push({
+          columns: footerContent
+        });
+      }
+
       const col = {
-        columns: footerObj // Create columns for footer content
+        stack: footerObj // Stack divider and content vertically
       };
       if (layout.footer.margin) col.margin = layout.footer.margin; // Apply footer margin if specified
 
-      docDefinition.footer = col; // Set document footer
+      // Check if footer should only appear on last page
+      if (layout.footer.lastPageOnly) {
+        docDefinition.footer = function (currentPage, pageCount) {
+          return currentPage === pageCount ? col : null;
+        };
+      } else {
+        docDefinition.footer = col; // Show footer on all pages
+      }
     }
     // console.log("docDefinition", JSON.stringify(docDefinition));
     return docDefinition;

@@ -326,15 +326,22 @@ const object = (
   }
 
   if (layout.type === "image") {
+    // default
     let imageContent = {
       image: valueData,
     };
-    if (layout.width) imageContent.width = layout.width || 200;
-    if (layout.height) imageContent.height = layout.height || 200;
-    if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth;
-    if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight;
-    if (layout.alignment) imageContent.alignment = layout.alignment;
-    if (layout.fit) imageContent.fit = layout.fit;
+
+    // Copy all image properties except width, height, value, type
+    const imageProps = Object.entries(layout).reduce((acc, [key, value]) => {
+      if (!["value", "type"].includes(key)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    imageContent = {
+      ...imageContent,
+      ...imageProps,
+    };
     return imageContent;
   } else if (layout.type === "svg") {
     const hasSignature =
@@ -803,23 +810,23 @@ const pdfDefinition = (layout, data) => {
                   x2: 1000, // Full page width
                   y2: 0,
                   lineWidth: 1,
-                  margin: [0, 0, 0, 0] // Remove any margin
-                }
+                  margin: [0, 0, 0, 0], // Remove any margin
+                },
               ],
-              margin: [0, 0, 0, 0] // Remove margin from canvas container
+              margin: [0, 0, 0, 0], // Remove margin from canvas container
             },
             {
               columns: footerContent,
-            }
+            },
           ],
-          margin: [0, 0, 0, 0] // Remove margin from stack
+          margin: [0, 0, 0, 0], // Remove margin from stack
         });
       } else {
         footerObj.push({
           stack: [
             {
               columns: footerContent,
-            }
+            },
           ],
         });
       }

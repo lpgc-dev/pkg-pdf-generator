@@ -1,7 +1,7 @@
 import genFrontPdf from "./components/frontEnd.js";
 import genBackPdf from "./components/backEnd.js";
 import PDFMerger from "pdf-merger-js";
-
+import { PDFDocument } from 'pdf-lib';
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);
 };
@@ -48,16 +48,57 @@ const pdfBase64 = async (layout, data) => {
         let attachmentBuffer = null;
         // check if content is base64 encoded
         if (attachment.content) {
-          attachmentBuffer = Buffer.from(
-            attachment.content.split(",")[1],
-            "base64"
-          );
-          // if url exist then download the url and convert to buffer
+          // Only process if content is PDF
+          if (attachment.content.includes('application/pdf')) {
+            attachmentBuffer = Buffer.from(
+              attachment.content.split(",")[1],
+              "base64"
+            );
+          }
+          // if url exists then download the url and convert to buffer
         } else if (attachment.url) {
           // download the url and convert to buffer
           const response = await fetch(attachment.url);
           const blob = await response.blob();
-          attachmentBuffer = Buffer.from(await blob.arrayBuffer());
+          
+          // For PDFs, use directly
+          if (blob.type === "application/pdf") {
+            attachmentBuffer = Buffer.from(await blob.arrayBuffer());
+          }
+          // For images, convert to PDF
+          else if (blob.type.startsWith('image/')) {
+            // Create a new PDF document with LETTER size
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage([612, 792]); // LETTER size in points (8.5" x 11")
+            
+            // Convert blob to array buffer and embed image
+            const imgBuffer = await blob.arrayBuffer();
+            let image;
+            if (blob.type === 'image/png') {
+              image = await pdfDoc.embedPng(imgBuffer);
+            } else if (blob.type === 'image/jpeg') {
+              image = await pdfDoc.embedJpg(imgBuffer);
+            }
+
+            // Calculate dimensions to fit image on LETTER page
+            const { width, height } = page.getSize(); // Will be 612x792 points
+            const imgDims = image.scale(1);
+            const scale = Math.min(
+              (width - 40) / imgDims.width, // Subtract 40 (20 on each side) from width
+              height / imgDims.height
+            );
+
+            // Draw image centered on page with 20 margin on each side
+            page.drawImage(image, {
+              x: 20 + (width - 40 - imgDims.width * scale) / 2, // Add 20 margin and center in remaining width
+              y: (height - imgDims.height * scale) / 2,
+              width: imgDims.width * scale,
+              height: imgDims.height * scale,
+            });
+
+            // Convert to buffer
+            attachmentBuffer = await pdfDoc.save();
+          }
         }
         // if attachmentBuffer is not null then add to merger
         if (attachmentBuffer) await merger.add(attachmentBuffer);

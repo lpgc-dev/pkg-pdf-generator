@@ -13,7 +13,8 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "dayjs": "^1.11.13",
-    "pdfmake": "0.2.15"
+    "pdfmake": "0.2.15",
+    "string-pixel-width": "^1.11.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.1",

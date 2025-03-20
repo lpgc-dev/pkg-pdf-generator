@@ -1,0 +1,379 @@
+{
+    "62a714d5-bf44-4ba8-bf45-0325642519d7": {
+        "1b4c0bc3-0b7e-4ec2-b530-b82ea8d6d749": {
+            "705bdf38-d06f-4947-8da9-e47cef63b579": {
+                "id": "6f9619ff-8b86-d011-b42d-00c04fc964ff",
+                "label": "Beta Enterprises",
+                "address": "456 Beta Blvd, Gotham, CA 90210",
+                "contactInfo": "support@betaenterprises.com",
+                "customerNumber": "CUST-002"
+            },
+            "ea217e09-8b40-431b-bb80-adf32ea0bf0b": {
+                "id": "bbbc7d55-7059-4648-99ef-090803abab79",
+                "gst": 12,
+                "label": "Montreal - King St",
+                "address": "789 King St, Montreal, QC H3B 1X8, Canada",
+                "customerId": "6f9619ff-8b86-d011-b42d-00c04fc964ff"
+            },
+            "c85a4b6a-3227-4f46-8ffd-090177daa70b": "PO-123",
+            "15376b7e-542c-4485-9bda-00887d732123": "INV-123",
+            "1800ff37-9bee-4d10-9fff-3c61bd132e69": null,
+            "bc8142ff-f21b-4d9f-b121-3b4d95d8012b": null,
+            "1e2131a7-438f-4c0f-9e53-20e46671c3c2": "12333",
+            "5ad109f0-853a-45ff-98bd-7659f34cbb75": "26/03/2025",
+            "6319474f-2e01-4a00-864e-c0df9cbac695": [
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 22,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "22",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 528
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "c8f6a2b4-1d9e-4b7c-9a3f-2d8b7e1f3a6c",
+                        "label": "Portable Charger",
+                        "description": "10,000mAh fast-charging power bank for smartphones and tablets."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "10,000mAh fast-charging power bank for smartphones and tablets.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 20,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 6,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 120
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d7c2b3f9-4a1e-4d6a-8f5b-2c9a7e3b5d4f",
+                        "label": "Smart LED Bulb",
+                        "description": "Wi-Fi-enabled LED bulb with voice control and color-changing options."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wi-Fi-enabled LED bulb with voice control and color-changing options.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 12,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 23,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "123",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 276
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "a3b7c5d9-1e4f-4a6d-9f2b-2c8a7e3d5b4f",
+                        "label": "USB-C Hub",
+                        "description": "Multi-port USB-C adapter with HDMI, USB 3.0, and SD card reader."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Multi-port USB-C adapter with HDMI, USB 3.0, and SD card reader.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 120,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 2,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 240
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "f2d3b7a6-4c9e-4a1d-8f5b-2c7a3e9b1d4f",
+                        "label": "Smartwatch",
+                        "description": "Fitness tracking smartwatch with heart rate monitoring and GPS support."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Fitness tracking smartwatch with heart rate monitoring and GPS support.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 124,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 79,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "asdasd",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 9796
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "e9b7c2f1-3d6a-4f8e-9a1d-2c7b3f4a8d5e",
+                        "label": "Noise Cancelling Headphones",
+                        "description": "Wireless over-ear headphones with active noise cancellation and deep bass."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wireless over-ear headphones with active noise cancellation and deep bass.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 25,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 600
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "c8f6a2b4-1d9e-4b7c-9a3f-2d8b7e1f3a6c",
+                        "label": "Portable Charger",
+                        "description": "10,000mAh fast-charging power bank for smartphones and tablets."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "10,000mAh fast-charging power bank for smartphones and tablets.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 20,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 6,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 120
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "e9b7c2f1-3d6a-4f8e-9a1d-2c7b3f4a8d5e",
+                        "label": "Noise Cancelling Headphones",
+                        "description": "Wireless over-ear headphones with active noise cancellation and deep bass."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wireless over-ear headphones with active noise cancellation and deep bass.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 25,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 600
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 22,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "22",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 528
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "c8f6a2b4-1d9e-4b7c-9a3f-2d8b7e1f3a6c",
+                        "label": "Portable Charger",
+                        "description": "10,000mAh fast-charging power bank for smartphones and tablets."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "10,000mAh fast-charging power bank for smartphones and tablets.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 20,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 6,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 120
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d7c2b3f9-4a1e-4d6a-8f5b-2c9a7e3b5d4f",
+                        "label": "Smart LED Bulb",
+                        "description": "Wi-Fi-enabled LED bulb with voice control and color-changing options."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wi-Fi-enabled LED bulb with voice control and color-changing options.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 12,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 23,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "123",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 276
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "a3b7c5d9-1e4f-4a6d-9f2b-2c8a7e3d5b4f",
+                        "label": "USB-C Hub",
+                        "description": "Multi-port USB-C adapter with HDMI, USB 3.0, and SD card reader."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Multi-port USB-C adapter with HDMI, USB 3.0, and SD card reader.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 120,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 2,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 240
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "f2d3b7a6-4c9e-4a1d-8f5b-2c7a3e9b1d4f",
+                        "label": "Smartwatch",
+                        "description": "Fitness tracking smartwatch with heart rate monitoring and GPS support."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Fitness tracking smartwatch with heart rate monitoring and GPS support.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 124,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 79,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "asdasd",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 9796
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "e9b7c2f1-3d6a-4f8e-9a1d-2c7b3f4a8d5e",
+                        "label": "Noise Cancelling Headphones",
+                        "description": "Wireless over-ear headphones with active noise cancellation and deep bass."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wireless over-ear headphones with active noise cancellation and deep bass.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 25,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 600
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "c8f6a2b4-1d9e-4b7c-9a3f-2d8b7e1f3a6c",
+                        "label": "Portable Charger",
+                        "description": "10,000mAh fast-charging power bank for smartphones and tablets."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "10,000mAh fast-charging power bank for smartphones and tablets.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 20,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 6,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 120
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "e9b7c2f1-3d6a-4f8e-9a1d-2c7b3f4a8d5e",
+                        "label": "Noise Cancelling Headphones",
+                        "description": "Wireless over-ear headphones with active noise cancellation and deep bass."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Wireless over-ear headphones with active noise cancellation and deep bass.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 25,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 24,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 600
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "b34d6f5a-2c8f-4a9e-b10d-8d3a7b9c2f5e",
+                        "label": "Mechanical Keyboard",
+                        "description": "Tactile mechanical keyboard with customizable key switches and RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "Tactile mechanical keyboard with customizable key switches and RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 40,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 21,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "A",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 840
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "d1f6a7b5-3c4f-4f68-9f20-2a7c8e9d34b7",
+                        "label": "Gaming Mouse",
+                        "description": "High-precision wired gaming mouse with customizable RGB lighting."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "High-precision wired gaming mouse with customizable RGB lighting.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 11,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 4,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "21",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 44
+                },
+                {
+                    "66338636-b591-44ee-9cd0-0cf9e993a412": {
+                        "id": "c8f6a2b4-1d9e-4b7c-9a3f-2d8b7e1f3a6c",
+                        "label": "Portable Charger",
+                        "description": "10,000mAh fast-charging power bank for smartphones and tablets."
+                    },
+                    "c3d6beaa-2358-4fe2-9d76-1fa43a22064f": "10,000mAh fast-charging power bank for smartphones and tablets.",
+                    "9433a032-e60f-4410-8a60-66603e940204": 20,
+                    "da33b674-1350-4116-83e7-fb2c70c66e5f": 7,
+                    "c3414fa6-e49b-440b-ae61-551a85649cf4": "ABG",
+                    "ed935ebd-0099-4167-9afa-829f9458830f": 140
+                }
+            ],
+            "0323ef35-8b56-4e4b-8090-c765c07f22b8": 15072,
+            "8b72fb58-9a96-43f4-9ba5-ed097496080d": 1808.64,
+            "9ff95465-585d-493f-9243-da87a69d4c78": 16880.64
+        }
+    }
+}

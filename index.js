@@ -45,11 +45,22 @@ const pdfBase64 = async (layout, data) => {
 
       // Add all attachments
       for (const attachment of pdfAttachments) {
-        const attachmentBuffer = Buffer.from(
-          attachment.split(",")[1],
-          "base64"
-        );
-        await merger.add(attachmentBuffer);
+        let attachmentBuffer = null;
+        // check if content is base64 encoded
+        if (attachment.content) {
+          attachmentBuffer = Buffer.from(
+            attachment.content.split(",")[1],
+            "base64"
+          );
+          // if url exist then download the url and convert to buffer
+        } else if (attachment.url) {
+          // download the url and convert to buffer
+          const response = await fetch(attachment.url);
+          const blob = await response.blob();
+          attachmentBuffer = Buffer.from(await blob.arrayBuffer());
+        }
+        // if attachmentBuffer is not null then add to merger
+        if (attachmentBuffer) await merger.add(attachmentBuffer);
       }
 
       // Get merged PDF as base64

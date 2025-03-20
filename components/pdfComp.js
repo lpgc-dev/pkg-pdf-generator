@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { Buffer } from "buffer";
+import pixelWidth from "string-pixel-width";
 
 const evaluateCondition = (conditionString, data) => {
   if (typeof conditionString !== "string" || conditionString.trim() === "") {
@@ -245,6 +246,10 @@ const object = (
   }
 
   let valueData = layout.value ?? "";
+  let valueDataPrefix = layout.prefix ?? null;
+  let valueDataSuffix = layout.suffix ?? null;
+  let valueDataToFixed = layout.toFixed || 0 ;
+
   let itemStyle = null;
 
   if (isSolo === false) {
@@ -263,6 +268,18 @@ const object = (
     } else {
       valueData = getValueFromPath(jsonData, valueData);
     }
+  }
+  // if the value is a decimal, format it to 2 decimal places
+  if (valueData && valueDataToFixed > 0) {
+    valueData = valueData.toFixed(valueDataToFixed);
+  }
+  // if there is a prefix, add it to the value
+  if (valueDataPrefix) {
+    valueData = valueDataPrefix + valueData;
+  }
+  // if there is a suffix, add it to the value
+  if (valueDataSuffix) {
+    valueData = valueData + valueDataSuffix;
   }
 
   if (layout.condition) {
@@ -504,7 +521,6 @@ const tableObject = (layout, data, staticData) => {
     } else {
       for (const row of layout.body.rows) {
         const tableRow = row.map((cell, index) => {
-          // console.log("cell : ", cell);
           if (cell.type === "table") {
             if (
               cell.visible &&
@@ -518,7 +534,6 @@ const tableObject = (layout, data, staticData) => {
           }
         });
 
-        // console.log(`tableRow : ${tableRow.length} : ${maxColumns} :`, tableRow);
         while (tableRow.length < maxColumns) {
           tableRow.push({ text: "", style: "normalText" });
         }
@@ -595,8 +610,46 @@ const tableObject = (layout, data, staticData) => {
         paddingTop: function (i, node) {
           return 2;
         },
-        paddingBottom: function (i, node) {
-          return 2;
+        paddingBottom: (rowIndex, node) => {
+          // This function determines the bottom padding for each row in the table
+          const DEFAULT_PADDING = 2;
+
+          // For the last row in the table
+          if (rowIndex === node.table.body.length - 1) {
+            // console.log(
+            //   "---------------------------------------------------- INDEX ---------------------------------------------------- :",
+            //   rowIndex
+            // );
+            // Get the current position information for the last element
+            const currentPosition = node.positions[node.positions.length - 1];
+            // Get text content and font size
+            const text = node.table.body[node.table.body.length - 1][0].text;
+            var width = pixelWidth(text, { size: 10 });
+            var lines = width / 250;
+            // adding extra bufferr lines based on the lines, as we need to take of the line break if word can't fit in at the end of the line
+            if (lines > 5 && lines < 10) {
+              lines++;
+            } else if (lines > 10) {
+              lines += 2;
+            }
+            // console.log("This text has number of Lines : " + lines);
+
+            // console.log("currentPosition :", currentPosition);
+            // Get how far down the page the current element is
+            const currentHeight = currentPosition.top;
+
+            // Calculate remaining space between the bottom of the table and end of page
+            // 600 because we want the table to be appeared till certain height
+            // lines * 10 = as we've assumes 1 line is about 10px height
+            const paddingBottom = 600 - currentHeight - lines * 10;
+            // console.log(`PADDING BTM : ${paddingBottom}`);
+
+            // Return this space as padding to fill gap to bottom of page
+            return paddingBottom;
+          }
+
+          // For all other rows, use the default padding of 2
+          return DEFAULT_PADDING;
         },
       };
     } else {
@@ -604,12 +657,31 @@ const tableObject = (layout, data, staticData) => {
     }
   }
   if (layout.margin) tempTable.margin = layout.margin;
+  // Add any additional properties from layout that haven't been handled
+  const handledProps = [
+    "type",
+    "widths",
+    "width",
+    "body",
+    "headerData",
+    "rowData",
+    "ignoreEmpty",
+    "headerRows",
+    "dontBreakRows",
+    "keepWithHeaderRows",
+    "layout",
+    "margin",
+  ];
+  for (const prop in layout) {
+    if (!handledProps.includes(prop)) {
+      tempTable[prop] = layout[prop];
+    }
+  }
 
   return tempTable;
 };
 
 const pdfDefinition = (layout, data) => {
-  //console.log("layout", data);
   try {
     //temp remove fonts
 
@@ -707,7 +779,6 @@ const pdfDefinition = (layout, data) => {
         } else if (content.type === "array") {
           const arrayData = processArray(content, data, layout);
           docDefinition.content.push(arrayData);
-          //console.log("arrayData", arrayData);
         }
       }
     }
@@ -729,28 +800,30 @@ const pdfDefinition = (layout, data) => {
         footerObj.push({
           stack: [
             {
-              canvas: [{
-                type: 'line',
-                x1: 0,
-                y1: 0,
-                x2: 570,
-                y2: 0,
-                lineWidth: 1
-              }]
+              canvas: [
+                {
+                  type: "line",
+                  x1: 0,
+                  y1: 0,
+                  x2: 570,
+                  y2: 0,
+                  lineWidth: 1,
+                },
+              ],
             },
             {
-              columns: footerContent
-            }
-          ]
+              columns: footerContent,
+            },
+          ],
         });
       } else {
         footerObj.push({
-          columns: footerContent
+          columns: footerContent,
         });
       }
 
       const col = {
-        stack: footerObj // Stack divider and content vertically
+        stack: footerObj, // Stack divider and content vertically
       };
       if (layout.footer.margin) col.margin = layout.footer.margin; // Apply footer margin if specified
 
@@ -763,11 +836,9 @@ const pdfDefinition = (layout, data) => {
         docDefinition.footer = col; // Show footer on all pages
       }
     }
-    // console.log("docDefinition", JSON.stringify(docDefinition));
     return docDefinition;
   } catch (error) {
     throw new Error(`PDF generation failed: ${error.message}`);
-    //console.log(error); // Log any errors that occur
     //return error; // Return error for handling
   }
 };

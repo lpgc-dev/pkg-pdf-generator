@@ -1,7 +1,7 @@
 import genFrontPdf from "./components/frontEnd.js";
 import genBackPdf from "./components/backEnd.js";
 import PDFMerger from "pdf-merger-js";
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument } from "pdf-lib";
 const pdfFrontBase64 = async (layout, data) => {
   return await genFrontPdf(layout, data);
 };
@@ -40,7 +40,12 @@ const pdfBase64 = async (layout, data) => {
       const merger = new PDFMerger();
 
       // Add main PDF
-      const mainPdfBuffer = Buffer.from(pdfBase64Data.split(",")[1], "base64");
+      const mainPdfBuffer =
+        typeof Buffer !== "undefined"
+          ? Buffer.from(pdfBase64Data.split(",")[1], "base64")
+          : Uint8Array.from(atob(pdfBase64Data.split(",")[1]), (c) =>
+              c.charCodeAt(0)
+            );
       await merger.add(mainPdfBuffer);
 
       // Add all attachments
@@ -49,11 +54,13 @@ const pdfBase64 = async (layout, data) => {
         // check if content is base64 encoded
         if (attachment.content) {
           // Only process if content is PDF
-          if (attachment.content.includes('application/pdf')) {
-            attachmentBuffer = Buffer.from(
-              attachment.content.split(",")[1],
-              "base64"
-            );
+          if (attachment.content.includes("application/pdf")) {
+            attachmentBuffer =
+              typeof Buffer !== "undefined"
+                ? Buffer.from(attachment.content.split(",")[1], "base64")
+                : Uint8Array.from(atob(attachment.content.split(",")[1]), (c) =>
+                    c.charCodeAt(0)
+                  );
           }
           // if url exists then download the url and convert to buffer
         } else if (attachment.url) {
@@ -63,10 +70,13 @@ const pdfBase64 = async (layout, data) => {
           
           // For PDFs, use directly
           if (blob.type === "application/pdf") {
-            attachmentBuffer = Buffer.from(await blob.arrayBuffer());
+            attachmentBuffer =
+              typeof Buffer !== "undefined"
+                ? Buffer.from(await blob.arrayBuffer())
+                : Uint8Array.from(atob(blob), (c) => c.charCodeAt(0));
           }
           // For images, convert to PDF
-          else if (blob.type.startsWith('image/')) {
+          else if (blob.type.startsWith("image/")) {
             // Create a new PDF document with LETTER size
             const pdfDoc = await PDFDocument.create();
             const page = pdfDoc.addPage([612, 792]); // LETTER size in points (8.5" x 11")
@@ -74,9 +84,9 @@ const pdfBase64 = async (layout, data) => {
             // Convert blob to array buffer and embed image
             const imgBuffer = await blob.arrayBuffer();
             let image;
-            if (blob.type === 'image/png') {
+            if (blob.type === "image/png") {
               image = await pdfDoc.embedPng(imgBuffer);
-            } else if (blob.type === 'image/jpeg') {
+            } else if (blob.type === "image/jpeg") {
               image = await pdfDoc.embedJpg(imgBuffer);
             }
 

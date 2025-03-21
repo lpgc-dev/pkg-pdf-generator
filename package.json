@@ -13,7 +13,9 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "dayjs": "^1.11.13",
-    "pdfmake": "0.2.15",
+    "pdf-lib": "^1.17.1",
+    "pdf-merger-js": "^5.1.2",
+    "pdfmake": "^0.2.18",
     "string-pixel-width": "^1.11.0"
   },
   "devDependencies": {

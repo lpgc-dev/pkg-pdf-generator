@@ -248,7 +248,7 @@ const object = (
   let valueData = layout.value ?? "";
   let valueDataPrefix = layout.prefix ?? null;
   let valueDataSuffix = layout.suffix ?? null;
-  let valueDataToFixed = layout.toFixed || 0 ;
+  let valueDataToFixed = layout.toFixed || 0;
 
   let itemStyle = null;
 
@@ -326,15 +326,22 @@ const object = (
   }
 
   if (layout.type === "image") {
+    // default
     let imageContent = {
       image: valueData,
     };
-    if (layout.width) imageContent.width = layout.width || 200;
-    if (layout.height) imageContent.height = layout.height || 200;
-    if (layout.maxWidth) imageContent.maxWidth = layout.maxWidth;
-    if (layout.maxHeight) imageContent.maxHeight = layout.maxHeight;
-    if (layout.alignment) imageContent.alignment = layout.alignment;
-    if (layout.fit) imageContent.fit = layout.fit;
+
+    // Copy all image properties except width, height, value, type
+    const imageProps = Object.entries(layout).reduce((acc, [key, value]) => {
+      if (!["value", "type"].includes(key)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    imageContent = {
+      ...imageContent,
+      ...imageProps,
+    };
     return imageContent;
   } else if (layout.type === "svg") {
     const hasSignature =
@@ -373,7 +380,7 @@ const object = (
       text: valueData,
       alignment: layout.alignment ?? "left",
       style: itemStyle !== null ? itemStyle : layout.style ?? "normalText",
-      ...additionalProps
+      ...additionalProps,
     };
   }
 };
@@ -610,16 +617,12 @@ const tableObject = (layout, data, staticData) => {
         paddingTop: function (i, node) {
           return 2;
         },
-        paddingBottom: (rowIndex, node) => {
+        paddingBottom: (i, node) => {
           // This function determines the bottom padding for each row in the table
           const DEFAULT_PADDING = 2;
 
           // For the last row in the table
-          if (rowIndex === node.table.body.length - 1) {
-            // console.log(
-            //   "---------------------------------------------------- INDEX ---------------------------------------------------- :",
-            //   rowIndex
-            // );
+          if (i === node.table.body.length - 1) {
             // Get the current position information for the last element
             const currentPosition = node.positions[node.positions.length - 1];
             // Get text content and font size
@@ -632,17 +635,16 @@ const tableObject = (layout, data, staticData) => {
             } else if (lines > 10) {
               lines += 2;
             }
-            // console.log("This text has number of Lines : " + lines);
-
-            // console.log("currentPosition :", currentPosition);
             // Get how far down the page the current element is
             const currentHeight = currentPosition.top;
 
             // Calculate remaining space between the bottom of the table and end of page
             // 600 because we want the table to be appeared till certain height
             // lines * 10 = as we've assumes 1 line is about 10px height
-            const paddingBottom = 600 - currentHeight - lines * 10;
-            // console.log(`PADDING BTM : ${paddingBottom}`);
+            let paddingBottom = 600 - currentHeight - lines * 10;
+            // custom logic to handle spacing if it goes to negative
+            paddingBottom =
+              paddingBottom < 0 ? 660 + paddingBottom : paddingBottom;
 
             // Return this space as padding to fill gap to bottom of page
             return paddingBottom;
@@ -805,35 +807,58 @@ const pdfDefinition = (layout, data) => {
                   type: "line",
                   x1: 0,
                   y1: 0,
-                  x2: 570,
+                  x2: 1000, // Full page width
                   y2: 0,
                   lineWidth: 1,
+                  margin: [0, 0, 0, 0], // Remove any margin
                 },
               ],
+              margin: [0, 0, 0, 0], // Remove margin from canvas container
             },
             {
               columns: footerContent,
             },
           ],
+          margin: [0, 0, 0, 0], // Remove margin from stack
         });
       } else {
         footerObj.push({
-          columns: footerContent,
+          stack: [
+            {
+              columns: footerContent,
+            },
+          ],
         });
       }
 
       const col = {
         stack: footerObj, // Stack divider and content vertically
+        margin: [0, 0, 0, 0] // Remove any default margins
       };
       if (layout.footer.margin) col.margin = layout.footer.margin; // Apply footer margin if specified
-
+      
+      // for pagination indicator  
+      let paginateTxt = {
+        text: "",
+        alignment: "right",
+        margin: [0, 0, 25, 0],
+      };
       // Check if footer should only appear on last page
       if (layout.footer.lastPageOnly) {
         docDefinition.footer = function (currentPage, pageCount) {
-          return currentPage === pageCount ? col : null;
+          if (currentPage === pageCount) {
+            return col;
+          }
         };
       } else {
-        docDefinition.footer = col; // Show footer on all pages
+        docDefinition.footer = function (currentPage, pageCount) {
+          if (layout.footer.showPageNumber) {
+            paginateTxt.text =
+              "page " + currentPage.toString() + " of " + pageCount;
+            col.stack[0].stack.push(paginateTxt);
+          }
+          return col;
+        };
       }
     }
     return docDefinition;

@@ -7,10 +7,11 @@ import { PDFDocument } from "pdf-lib";
 const isBrowser = () => typeof window !== "undefined";
 
 const getValueFromPath = (obj, path) => {
-  return path.reduce(
+  const result = path.reduce(
     (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
     obj
   );
+  return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
 
 const base64ToFile = (base64, fileName, contentType = "") => {
@@ -37,9 +38,14 @@ const base64ToFile = (base64, fileName, contentType = "") => {
 
 const createPDFFromImage = async (pdfDoc, blob, arrayBuffer) => {
   const margin = 40;
-  const image = blob.type === "image/jpeg" 
-    ? await pdfDoc.embedJpg(isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer))
-    : await pdfDoc.embedPng(isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer));
+  const image =
+    blob.type === "image/jpeg"
+      ? await pdfDoc.embedJpg(
+          isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer)
+        )
+      : await pdfDoc.embedPng(
+          isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer)
+        );
 
   const page = pdfDoc.addPage([612, 792]); // LETTER size
   const { width, height } = page.getSize();
@@ -67,8 +73,8 @@ async function getNetworkAttachment(url) {
 
   if (blob.type === "application/pdf") {
     return isBrowser() ? new Uint8Array(arrayBuffer) : Buffer.from(arrayBuffer);
-  } 
-  
+  }
+
   if (blob.type.startsWith("image/")) {
     const pdfDoc = await PDFDocument.create();
     await createPDFFromImage(pdfDoc, blob, arrayBuffer);
@@ -83,13 +89,24 @@ const mergePDFs = async (pdfBase64Data, pdfAttachments, isBrowserEnv) => {
   const merger = new PDFMerger();
 
   if (isBrowserEnv) {
-    const mainPdfFile = base64ToFile(pdfBase64Data, "main.pdf", "application/pdf");
+    const mainPdfFile = base64ToFile(
+      pdfBase64Data,
+      "main.pdf",
+      "application/pdf"
+    );
     await merger.add(mainPdfFile);
 
     for (const attachment of pdfAttachments) {
       if (attachment.url) {
         const attachmentBuffer = await getNetworkAttachment(attachment.url);
         if (attachmentBuffer) await merger.add(attachmentBuffer);
+      } else if (attachment.value && attachment.type === "application/pdf") {
+        const attachmentBuffer = base64ToFile(
+          attachment.value,
+          attachment.name,
+          attachment.type
+        );
+        await merger.add(attachmentBuffer);
       }
     }
 
@@ -138,10 +155,18 @@ const pdfBase64 = async (layout, data) => {
 
   // Handle additional PDF content
   if (layout.additionalContent?.type === "mergePdf") {
-    const pdfAttachments = getValueFromPath(data, layout.additionalContent.value);
+    const pdfAttachments = getValueFromPath(
+      data,
+      layout.additionalContent.value
+    );
+
     if (pdfAttachments?.length > 0) {
       try {
-        pdfBase64Data = await mergePDFs(pdfBase64Data, pdfAttachments, isBrowser());
+        pdfBase64Data = await mergePDFs(
+          pdfBase64Data,
+          pdfAttachments,
+          isBrowser()
+        );
       } catch (error) {
         console.error("Error merging PDFs:", error);
         // Fall back to original PDF if merge fails

@@ -761,19 +761,18 @@ const tableObject = (layout, data, staticData) => {
             // Get text content and font size
             const text = node.table.body[node.table.body.length - 1][0].text;
             var width = pixelWidth(text, { size: 10 });
-            var lines = width / 250;
+            var lines = Math.ceil(width / 250);
             // Get how far down the page the current element is
             const currentHeight = currentPosition.top;
-
             let paddingBottom =
               currentPosition.pageInnerHeight +
               (280 - currentHeight) -
               lines * 10;
             // custom logic to handle spacing if it goes to negative
             paddingBottom =
-              paddingBottom < 0 ? 290 - paddingBottom : paddingBottom;
+            paddingBottom < 0 ? 280 - paddingBottom : paddingBottom;
             // Return this space as padding to fill gap to bottom of page
-            return paddingBottom;
+            return paddingBottom > 300 ? 300 : paddingBottom;
           }
 
           // For all other rows, use the default padding of 2

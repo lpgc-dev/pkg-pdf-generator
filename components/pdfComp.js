@@ -271,7 +271,13 @@ const object = (
   }
   // if the value is a decimal, format it to 2 decimal places
   if (valueData && valueDataToFixed > 0) {
-    valueData = valueData.toFixed(valueDataToFixed);
+    try {
+      if (valueData && typeof valueData === "string") {
+        valueData = parseFloat(valueData);
+      }
+      valueData = valueData.toFixed(valueDataToFixed);
+    } catch (error) {
+    }
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
@@ -314,6 +320,77 @@ const object = (
       }
     }
   }
+  if (layout.type === "stack") {
+    const { content, ...rest } = layout; // Extract content, keep the rest
+
+    const contentArray = Array.isArray(content);
+    if (!contentArray) {
+      return {};
+    }
+    const newContent = content.map((item) => {
+      const isValArray = Array.isArray(item.value);
+      if (isValArray) {
+        if (item.value[0] === "$") {
+          const removeFirst = item.value.slice(1);
+          item.value = getValueFromPath(staticData, removeFirst);
+        } else {
+          item.value = getValueFromPath(jsonData, item.value);
+        }
+      }
+      if (item.type === "text") {
+        const additionalProps = Object.entries(item).reduce(
+          (acc, [key, value]) => {
+            if (!["type", "value", "alignment", "style"].includes(key)) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {}
+        );
+        if (item.prefix) {
+          item.value = item.prefix + item.value;
+        }
+        if (item.suffix) {
+          item.value = item.value + item.suffix;
+        }
+        return {
+          text: item.value,
+          alignment: item.alignment ?? "left",
+          style:
+            item.style !== null ? item.style : layout.style ?? "normalText",
+          ...additionalProps,
+        };
+      } else if (item.type === "image") {
+        // default
+        let imageContent = {
+          image: item.value,
+        };
+
+        // Copy all image properties except width, height, value, type
+        const imageProps = Object.entries(item).reduce((acc, [key, value]) => {
+          if (!["value", "type"].includes(key)) {
+            acc[key] = value;
+          }
+          return acc;
+        }, {});
+        imageContent = {
+          ...imageContent,
+          ...imageProps,
+        };
+        return imageContent;
+      } else if (item.type === "table") {
+        const tableContent = tableObject(item, data, staticData);
+        return tableContent;
+      }
+    });
+
+    const stackContent = {
+      stack: [...newContent],
+      ...rest, // Spread remaining properties
+    };
+
+    return stackContent;
+  }
 
   if (layout.type === "qr") {
     const qrContent = {
@@ -355,9 +432,17 @@ const object = (
     let svgContent = {
       svg: decodedSvg,
     };
-    if (layout.width) svgContent.width = layout.width;
-    if (layout.height) svgContent.height = layout.height;
-    return svgContent;
+    // Copy all image properties except width, height, value, type
+    const svgProps = Object.entries(layout).reduce((acc, [key, value]) => {
+      if (!["value", "type"].includes(key)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    return {
+      ...svgContent,
+      ...svgProps,
+    };
   } else {
     if (layout.format && layout.format.type === "date") {
       if (valueData === null || valueData === undefined) {
@@ -597,7 +682,13 @@ const tableObject = (layout, data, staticData) => {
     } else if (layout.layout === "onlyVerticalLinesWithClosedBorders") {
       tempTable.layout = {
         hLineWidth: function (i, node) {
-          return i === 0 || i === 1 || i === node.table.body.length ? 1 : 0; // Horizontal lines for header and bottom
+          return i === 0 || i === 1 || i === node.table.body.length
+            ? 1
+            : node.onlyVerticalLinesWithClosedBorders_extra_row_height !=
+                undefined &&
+              node.onlyVerticalLinesWithClosedBorders_extra_row_height != null
+            ? node.onlyVerticalLinesWithClosedBorders_extra_row_height
+            : 0.5; // Horizontal lines for header and bottom
         },
         vLineWidth: function (i, node) {
           return 1; // All vertical lines
@@ -606,10 +697,16 @@ const tableObject = (layout, data, staticData) => {
           return "black";
         },
         hLineColor: function (i, node) {
-          return "black";
+          return i === 0 || i === 1 || i === node.table.body.length
+            ? "black"
+            : node.onlyVerticalLinesWithClosedBorders_extra_row_color !=
+                undefined &&
+              node.onlyVerticalLinesWithClosedBorders_extra_row_color != null
+            ? node.onlyVerticalLinesWithClosedBorders_extra_row_color
+            : "lightgray";
         },
-        paddingLeft: function (i, node) {
-          return 4;
+        paddingLeft: function () {
+          return 0;
         },
         paddingRight: function (i, node) {
           return 4;
@@ -629,23 +726,16 @@ const tableObject = (layout, data, staticData) => {
             const text = node.table.body[node.table.body.length - 1][0].text;
             var width = pixelWidth(text, { size: 10 });
             var lines = width / 250;
-            // adding extra bufferr lines based on the lines, as we need to take of the line break if word can't fit in at the end of the line
-            if (lines > 5 && lines < 10) {
-              lines++;
-            } else if (lines > 10) {
-              lines += 2;
-            }
             // Get how far down the page the current element is
             const currentHeight = currentPosition.top;
 
-            // Calculate remaining space between the bottom of the table and end of page
-            // 600 because we want the table to be appeared till certain height
-            // lines * 10 = as we've assumes 1 line is about 10px height
-            let paddingBottom = 600 - currentHeight - lines * 10;
+            let paddingBottom =
+              currentPosition.pageInnerHeight +
+              (280 - currentHeight) -
+              lines * 10;
             // custom logic to handle spacing if it goes to negative
             paddingBottom =
-              paddingBottom < 0 ? 660 + paddingBottom : paddingBottom;
-
+              paddingBottom < 0 ? 290 - paddingBottom : paddingBottom;
             // Return this space as padding to fill gap to bottom of page
             return paddingBottom;
           }
@@ -787,84 +877,127 @@ const pdfDefinition = (layout, data) => {
 
     // Handle document footer if specified in layout
     if (layout.footer) {
-      let footerContent = [];
+      docDefinition.footer = function (currentPage, pageCount) {
+        // pre build footer content
+        let footerContent = [];
 
-      // Generate footer content first
-      for (const footer of layout.footer.contents) {
-        footerContent.push(object(footer, data, layout.static, true, data)); // Generate footer content
-      }
+        // // Generate footer content first
+        for (const footer of layout.footer.contents) {
+          footerContent.push(object(footer, data, layout.static, true, data)); // Generate footer content
+        }
 
-      let footerObj = [];
-
-      // Add divider above footer by default unless explicitly set to false
-      const showDivider = layout.footer.showDivider !== false;
-      if (showDivider) {
-        footerObj.push({
-          stack: [
-            {
-              canvas: [
-                {
-                  type: "line",
-                  x1: 0,
-                  y1: 0,
-                  x2: 1000, // Full page width
-                  y2: 0,
-                  lineWidth: 1,
-                  margin: [0, 0, 0, 0], // Remove any margin
-                },
-              ],
-              margin: [0, 0, 0, 0], // Remove margin from canvas container
-            },
-            {
-              columns: footerContent,
-            },
-          ],
-          margin: [0, 0, 0, 0], // Remove margin from stack
-        });
-      } else {
-        footerObj.push({
-          stack: [
-            {
-              columns: footerContent,
-            },
-          ],
-        });
-      }
-
-      const col = {
-        stack: footerObj, // Stack divider and content vertically
-        margin: [0, 0, 0, 0] // Remove any default margins
-      };
-      if (layout.footer.margin) col.margin = layout.footer.margin; // Apply footer margin if specified
-      
-      // for pagination indicator  
-      let paginateTxt = {
-        text: "",
-        alignment: "right",
-        margin: [0, 0, 25, 0],
-      };
-      // Check if footer should only appear on last page
-      if (layout.footer.lastPageOnly) {
-        docDefinition.footer = function (currentPage, pageCount) {
-          if (currentPage === pageCount) {
-            return col;
+        if (Array.isArray(footerContent) && footerContent.length > 0) {
+          for (const footer of footerContent) {
+            if (
+              footer &&
+              typeof footer === "object" &&
+              Array.isArray(footer.stack)
+            ) {
+              for (const item of footer.stack) {
+                if (
+                  item &&
+                  typeof item === "object" &&
+                  item.table &&
+                  Array.isArray(item.table.body)
+                ) {
+                  for (const bodyItem of item.table.body) {
+                    if (Array.isArray(bodyItem)) {
+                      for (const cell of bodyItem) {
+                        if (
+                          cell &&
+                          cell.showOnlyOnLastPage &&
+                          currentPage != pageCount
+                        ) {
+                          if (cell.text) cell.text = ""; // Set text to an empty string
+                          if (cell.svg)
+                            cell.svg = `<svg xmlns="http://www.w3.org/2000/svg"></svg>`; // Set svg to an empty string
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
+        }
+
+        let footerContentObj = [];
+
+        // // Add divider above footer by default unless explicitly set to false
+        const showDivider = layout.footer.showDivider == true;
+        if (showDivider) {
+          footerContentObj.push({
+            stack: [
+              {
+                canvas: [
+                  {
+                    type: "line",
+                    x1: 0,
+                    y1: 0,
+                    x2: 1000, // Full page width
+                    y2: 0,
+                    lineWidth: 1,
+                    margin: [0, 0, 0, 0], // Remove any margin
+                  },
+                ],
+                margin: [0, 0, 0, 0], // Remove margin from canvas container
+              },
+              {
+                columns: footerContent,
+              },
+            ],
+            margin: layout.footer.margin ? layout.footer.margin : [0, 0, 0, 0],
+          });
+        } else {
+          footerContentObj.push({
+            stack: [
+              {
+                columns: footerContent,
+              },
+            ],
+            margin: layout.footer.margin ? layout.footer.margin : [0, 0, 0, 0],
+          });
+        }
+
+        // for pagination indicator
+        let paginateTxt = {
+          text: "",
+          alignment: "right",
+          margin: [0, 10, 0, 0],
+          fontSize: 9,
         };
-      } else {
-        docDefinition.footer = function (currentPage, pageCount) {
-          if (layout.footer.showPageNumber) {
-            paginateTxt.text =
-              "page " + currentPage.toString() + " of " + pageCount;
-            col.stack[0].stack.push(paginateTxt);
+        // add page number
+        if (layout.footer.showPageNumber) {
+          paginateTxt.text =
+            "Page " + currentPage.toString() + " of " + pageCount;
+          let leftFooterTable = null;
+          if (layout.footer.leftFooter) {
+            if (layout.footer.leftFooter.type === "table") {
+              leftFooterTable = tableObject(
+                layout.footer.leftFooter,
+                data,
+                layout.static
+              );
+            }
           }
-          return col;
-        };
-      }
+
+          footerContentObj[0].stack.push({
+            columns: [
+              leftFooterTable || {
+                ...paginateTxt,
+                text: "LEFT",
+                alignment: "left",
+              },
+              paginateTxt,
+            ],
+          });
+        }
+        return footerContentObj;
+      };
     }
     return docDefinition;
   } catch (error) {
     throw new Error(`PDF generation failed: ${error.message}`);
-    //return error; // Return error for handling
   }
 };
 

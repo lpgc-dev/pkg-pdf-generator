@@ -3,13 +3,49 @@ import { Buffer } from "buffer";
 import pixelWidth from "string-pixel-width";
 
 const evaluateCondition = (conditionString, data) => {
+  // remove the actual PDF data from the data object as its long and unneeded
+  data.appendPDFData.value
+    ? (data.appendPDFData.value = true)
+    : (data.appendPDFData.value = false);
+
+  // Function to sanitize keys for use in Function constructor, required as keys not following JS var naming rules break the function
+  const sanitizeKey = (key) => {
+    // Replace hyphens and other special characters with underscores
+    let sanitized = key.replace(/[^a-zA-Z0-9]/g, "_");
+    // Add prefix if key starts with a number
+    if (/^[0-9]/.test(sanitized)) {
+      sanitized = "key_" + sanitized;
+    }
+    return sanitized;
+  };
+
+  // Create a sanitized version of the data object
+  const sanitizedData = {};
+  Object.entries(data).forEach(([key, value]) => {
+    sanitizedData[sanitizeKey(key)] = value;
+  });
+
+  // Sanitize the condition string to use the sanitized keys
+  let sanitizedCondition = conditionString;
+  Object.keys(data).forEach((key) => {
+    const sanitizedKey = sanitizeKey(key);
+    if (key !== sanitizedKey) {
+      sanitizedCondition = sanitizedCondition.replace(
+        new RegExp(key, "g"),
+        sanitizedKey
+      );
+    }
+  });
+
   if (typeof conditionString !== "string" || conditionString.trim() === "") {
     return true; // Default to true if no valid condition is provided
   }
+
   try {
-    return new Function(...Object.keys(data), `return ${conditionString};`)(
-      ...Object.values(data)
-    );
+    return new Function(
+      ...Object.keys(sanitizedData),
+      `return ${sanitizedCondition};`
+    )(...Object.values(sanitizedData));
   } catch (error) {
     console.error("Error evaluating condition:", error);
     return false;

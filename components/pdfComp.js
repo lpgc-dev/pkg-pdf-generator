@@ -3,11 +3,6 @@ import { Buffer } from "buffer";
 import pixelWidth from "string-pixel-width";
 
 const evaluateCondition = (conditionString, data) => {
-  // remove the actual PDF data from the data object as its long and unneeded
-  data.appendPDFData.value
-    ? (data.appendPDFData.value = true)
-    : (data.appendPDFData.value = false);
-
   // Function to sanitize keys for use in Function constructor, required as keys not following JS var naming rules break the function
   const sanitizeKey = (key) => {
     // Replace hyphens and other special characters with underscores
@@ -312,8 +307,7 @@ const object = (
         valueData = parseFloat(valueData);
       }
       valueData = valueData.toFixed(valueDataToFixed);
-    } catch (error) {
-    }
+    } catch (error) {}
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
@@ -770,7 +764,7 @@ const tableObject = (layout, data, staticData) => {
               lines * 10;
             // custom logic to handle spacing if it goes to negative
             paddingBottom =
-            paddingBottom < 0 ? 280 - paddingBottom : paddingBottom;
+              paddingBottom < 0 ? 280 - paddingBottom : paddingBottom;
             // Return this space as padding to fill gap to bottom of page
             return paddingBottom > 300 ? 300 : paddingBottom;
           }

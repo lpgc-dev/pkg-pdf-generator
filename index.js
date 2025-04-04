@@ -13,6 +13,37 @@ const getValueFromPath = (obj, path) => {
   );
   return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
+function findAndSetKeyInObject(obj, keyToFind, newValue) {
+  let result = null;
+  let mainKey = keyToFind;
+  let property = null;
+
+  // Handle string paths
+  if (typeof keyToFind === "string") {
+    [mainKey, property] = keyToFind.split(".");
+  }
+
+  function recursiveSearch(obj) {
+    if (obj && typeof obj === "object") {
+      if (obj.hasOwnProperty(mainKey)) {
+        if (newValue !== undefined) {
+          obj[mainKey] = newValue; // Set new value
+        }
+        // If we have a property to access, get that instead
+        result = property ? obj[mainKey][property] : obj[mainKey];
+        return;
+      }
+      for (const key in obj) {
+        if (typeof obj[key] === "object") {
+          recursiveSearch(obj[key]);
+        }
+      }
+    }
+  }
+
+  recursiveSearch(obj);
+  return newValue !== undefined ? obj : result;
+}
 
 const base64ToFile = (base64, fileName, contentType = "") => {
   const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
@@ -158,6 +189,11 @@ const pdfBase64 = async (layout, data) => {
 
   // Handle additional PDF content
   if (layout.additionalContent?.type === "mergePdf") {
+    let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
+    if (val === false) {
+      // Skipping mergePDFs
+      return pdfBase64Data;
+    }
     const pdfAttachments = getValueFromPath(
       data,
       layout.additionalContent.value

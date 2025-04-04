@@ -279,6 +279,7 @@ const object = (
 
   let valueData = layout.value ?? "";
   let valueDataPrefix = layout.prefix ?? null;
+  let valueDataAfterPrefix = layout.afterPrefix ?? null;
   // if prefix is an array, check if it is a static data or a table single row data
   if (valueDataPrefix) {
     let isValArray = Array.isArray(valueDataPrefix);
@@ -298,6 +299,7 @@ const object = (
   }
   
   let valueDataSuffix = layout.suffix ?? null;
+  let valueDataAfterSuffix = layout.afterSuffix ?? null;
   // if suffix is an array, check if it is a static data or a table single row data
   if (valueDataSuffix) {
     let isValArray = Array.isArray(valueDataSuffix);
@@ -347,11 +349,11 @@ const object = (
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
-    valueData = valueDataPrefix + ' ' + valueData;
+    valueData = valueDataPrefix + (valueDataAfterPrefix || '') + valueData;
   }
   // if there is a suffix, add it to the value
   if (valueDataSuffix) {
-    valueData = valueData + ' ' + valueDataSuffix;
+    valueData = valueData + (valueDataAfterSuffix || '') + valueDataSuffix;
   }
 
   if (layout.condition) {

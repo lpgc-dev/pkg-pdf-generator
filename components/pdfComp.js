@@ -268,7 +268,8 @@ const object = (
   data = null,
   staticData = null,
   isSolo = false,
-  jsonData
+  jsonData,
+  tableSingleRowData = null
 ) => {
   if (layout.visible && evaluateCondition(layout.visible, data) === false) {
     return {
@@ -278,7 +279,42 @@ const object = (
 
   let valueData = layout.value ?? "";
   let valueDataPrefix = layout.prefix ?? null;
+  // if prefix is an array, check if it is a static data or a table single row data
+  if (valueDataPrefix) {
+    let isValArray = Array.isArray(valueDataPrefix);
+    if (isValArray) {
+      if (valueDataPrefix[0] === "$") {
+        const removeFirst = valueDataPrefix.slice(1);
+        valueDataPrefix = getValueFromPath(staticData, removeFirst);
+      } else {
+        if (tableSingleRowData) {
+          valueDataPrefix = getValueFromPath(
+            tableSingleRowData,
+            valueDataPrefix
+          );
+        }
+      }
+    }
+  }
+  
   let valueDataSuffix = layout.suffix ?? null;
+  // if suffix is an array, check if it is a static data or a table single row data
+  if (valueDataSuffix) {
+    let isValArray = Array.isArray(valueDataSuffix);
+    if (isValArray) {
+      if (valueDataSuffix[0] === "$") {
+        const removeFirst = valueDataSuffix.slice(1);
+        valueDataSuffix = getValueFromPath(staticData, removeFirst);
+      } else {
+        if (tableSingleRowData) {
+          valueDataSuffix = getValueFromPath(
+            tableSingleRowData,
+            valueDataSuffix
+          );
+        }
+      }
+    }
+  }
   let valueDataToFixed = layout.toFixed || 0;
 
   let itemStyle = null;
@@ -311,11 +347,11 @@ const object = (
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
-    valueData = valueDataPrefix + valueData;
+    valueData = valueDataPrefix + ' ' + valueData;
   }
   // if there is a suffix, add it to the value
   if (valueDataSuffix) {
-    valueData = valueData + valueDataSuffix;
+    valueData = valueData + ' ' + valueDataSuffix;
   }
 
   if (layout.condition) {
@@ -378,10 +414,28 @@ const object = (
           {}
         );
         if (item.prefix) {
-          item.value = item.prefix + item.value;
+          const isValArray = Array.isArray(item.prefix);
+          if (isValArray) {
+            if (item.prefix[0] === "$") {
+              const removeFirst = item.prefix.slice(1);
+              item.prefix = getValueFromPath(staticData, removeFirst);
+            } else {
+              item.prefix = getValueFromPath(jsonData, item.prefix);
+            }
+          }
+          item.value = item.prefix + ' ' + item.value;
         }
         if (item.suffix) {
-          item.value = item.value + item.suffix;
+          const isValArray = Array.isArray(item.suffix);
+          if (isValArray) {
+            if (item.suffix[0] === "$") {
+              const removeFirst = item.suffix.slice(1);
+              item.suffix = getValueFromPath(staticData, removeFirst);
+            } else {
+              item.suffix = getValueFromPath(jsonData, item.suffix);
+            }
+          }
+          item.value = item.value + ' ' + item.suffix;
         }
         return {
           text: item.value,
@@ -626,7 +680,7 @@ const tableObject = (layout, data, staticData) => {
                 }
                 return tableObject(cell, data, staticData);
               } else {
-                return object(cell, cellData, staticData, false, data);
+                return object(cell, cellData, staticData, false, data, row);
               }
             } else {
               cellData = cell.value;

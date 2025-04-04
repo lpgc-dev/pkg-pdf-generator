@@ -297,9 +297,9 @@ const object = (
       }
     }
   }
-  
+
   let valueDataSuffix = layout.suffix ?? null;
-  let valueDataAfterSuffix = layout.afterSuffix ?? null;
+  let valueDataBeforeSuffix = layout.beforeSuffix ?? null;
   // if suffix is an array, check if it is a static data or a table single row data
   if (valueDataSuffix) {
     let isValArray = Array.isArray(valueDataSuffix);
@@ -349,11 +349,11 @@ const object = (
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
-    valueData = valueDataPrefix + (valueDataAfterPrefix || '') + valueData;
+    valueData = valueDataPrefix + (valueDataAfterPrefix || "") + valueData;
   }
   // if there is a suffix, add it to the value
   if (valueDataSuffix) {
-    valueData = valueData + (valueDataAfterSuffix || '') + valueDataSuffix;
+    valueData = valueData + (valueDataBeforeSuffix || "") + valueDataSuffix;
   }
 
   if (layout.condition) {
@@ -425,7 +425,7 @@ const object = (
               item.prefix = getValueFromPath(jsonData, item.prefix);
             }
           }
-          item.value = item.prefix + ' ' + item.value;
+          item.value = item.prefix + (item.afterPrefix || '') + item.value;
         }
         if (item.suffix) {
           const isValArray = Array.isArray(item.suffix);
@@ -437,7 +437,7 @@ const object = (
               item.suffix = getValueFromPath(jsonData, item.suffix);
             }
           }
-          item.value = item.value + ' ' + item.suffix;
+          item.value = item.value + (item.beforeSuffix || '') + item.suffix;
         }
         return {
           text: item.value,

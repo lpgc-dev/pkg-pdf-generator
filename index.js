@@ -3,6 +3,12 @@ import genBackPdf from "./components/backEnd.js";
 import PDFMerger from "pdf-merger-js";
 import { PDFDocument } from "pdf-lib";
 
+// ENUMS
+const MERGE_TYPE = {
+  CONDITIONAL: "conditional_mergePdf",
+  MANDATORY: "mandatory_mergePdf",
+};
+
 // Utility functions
 const isBrowser = () => typeof window !== "undefined";
 
@@ -188,27 +194,55 @@ const pdfBase64 = async (layout, data) => {
   }
 
   // Handle additional PDF content
-  if (layout.additionalContent?.type === "mergePdf") {
-    let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
-    if (val === false) {
-      // Skipping mergePDFs
-      return pdfBase64Data;
-    }
-    const pdfAttachments = getValueFromPath(
-      data,
-      layout.additionalContent.value
-    );
+  if (Array.isArray(layout.additionalContent)) {
+    for (const content of layout.additionalContent) {
+      if (content.type === MERGE_TYPE.CONDITIONAL) {
+        let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
+        if (val === false || val === null) {
+          // Skipping mergePDFs
+          continue;
+        }
+        const pdfAttachments = getValueFromPath(data, content.value);
 
-    if (pdfAttachments?.length > 0) {
-      try {
-        pdfBase64Data = await mergePDFs(
-          pdfBase64Data,
-          pdfAttachments,
-          isBrowser()
-        );
-      } catch (error) {
-        console.error("Error merging PDFs:", error);
-        // Fall back to original PDF if merge fails
+
+        if (pdfAttachments?.length > 0) {
+          try {
+            pdfBase64Data = await mergePDFs(
+              pdfBase64Data,
+              pdfAttachments,
+              isBrowser()
+            );
+          } catch (error) {
+            console.error("Error merging PDFs:", error);
+            // Fall back to original PDF if merge fails
+          }
+        }
+      } else if (content.type === MERGE_TYPE.MANDATORY) {
+        // here check if content.value is array and if array then inside it has string or obj ?
+        let _isDynamicVal = false;
+        if (Array.isArray(content.value) && content.value.length > 0) {
+          _isDynamicVal = content.value.every(
+            (item) => typeof item === "string"
+          );
+        }
+        let pdfAttachments = [];
+        if (_isDynamicVal) {
+          pdfAttachments = getValueFromPath(data, content.value);
+        } else {
+          pdfAttachments = content.value;
+        }
+        if (pdfAttachments?.length > 0) {
+          try {
+            pdfBase64Data = await mergePDFs(
+              pdfBase64Data,
+              pdfAttachments,
+              isBrowser()
+            );
+          } catch (error) {
+            console.error("Error merging PDFs:", error);
+            // Fall back to original PDF if merge fails
+          }
+        }
       }
     }
   }

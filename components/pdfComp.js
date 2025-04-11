@@ -559,10 +559,11 @@ const object = (
 // Function to get a nested value from an object based on a path
 function getValueFromPath(obj, path) {
   // Use reduce to traverse the object and get the value at the specified path
-  return path.reduce(
+  const result = path.reduce(
     (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
     obj
   );
+  return result === null || result === undefined ? "" : result;
 }
 
 // Utility function to check if a variable is an object (excluding arrays)

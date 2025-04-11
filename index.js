@@ -19,7 +19,7 @@ const getValueFromPath = (obj, path) => {
   );
   return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
-function findAndSetKeyInObject(obj, keyToFind, newValue) {
+function findAndSetKeyInObject(obj, keyToFind, newValue, searchInPrivate = false) {
   let result = null;
   let mainKey = keyToFind;
   let property = null;
@@ -40,6 +40,10 @@ function findAndSetKeyInObject(obj, keyToFind, newValue) {
         return;
       }
       for (const key in obj) {
+        // Skip _private_ keys if searchInPrivate is false
+        if (!searchInPrivate && key.startsWith("_private_")) {
+          continue;
+        }
         if (typeof obj[key] === "object") {
           recursiveSearch(obj[key]);
         }

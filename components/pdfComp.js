@@ -269,7 +269,8 @@ const object = (
   staticData = null,
   isSolo = false,
   jsonData,
-  tableSingleRowData = null
+  tableSingleRowData = null,
+  ignorePrefixAndSuffix = false
 ) => {
   if (layout.visible && evaluateCondition(layout.visible, data) === false) {
     return {
@@ -278,8 +279,8 @@ const object = (
   }
 
   let valueData = layout.value ?? "";
-  let valueDataPrefix = layout.prefix ?? null;
-  let valueDataAfterPrefix = layout.afterPrefix ?? null;
+  let valueDataPrefix = ignorePrefixAndSuffix ? null : layout.prefix ?? null;
+  let valueDataAfterPrefix = ignorePrefixAndSuffix ? null : layout.afterPrefix ?? null;
   // if prefix is an array, check if it is a static data or a table single row data
   if (valueDataPrefix) {
     let isValArray = Array.isArray(valueDataPrefix);
@@ -298,8 +299,8 @@ const object = (
     }
   }
 
-  let valueDataSuffix = layout.suffix ?? null;
-  let valueDataBeforeSuffix = layout.beforeSuffix ?? null;
+  let valueDataSuffix = ignorePrefixAndSuffix ? null : layout.suffix ?? null;
+  let valueDataBeforeSuffix = ignorePrefixAndSuffix ? null : layout.beforeSuffix ?? null;
   // if suffix is an array, check if it is a static data or a table single row data
   if (valueDataSuffix) {
     let isValArray = Array.isArray(valueDataSuffix);
@@ -600,9 +601,47 @@ const tableObject = (layout, data, staticData) => {
       if (checkObject2) {
         headerData = getValueFromPath(data, layout.headerData);
       }
-
+      
       const headerRow = layout.body.header.map((cell, index) => {
         let cellData = null;
+        let cellDataPrefix = cell.prefix ?? null;
+        let cellDataAfterPrefix = cell.afterPrefix ?? null;
+        let cellDataBeforeSuffix = cell.beforeSuffix ?? null;
+        let cellDataSuffix = cell.suffix ?? null;
+        // if prefix is an array, check if it is a static data or a table single row data
+        if (cellDataPrefix) {
+          let isValArray = Array.isArray(cellDataPrefix);
+          if (isValArray) {
+            if (cellDataPrefix[0] === "$") {
+              const removeFirst = cellDataPrefix.slice(1);
+              cellDataPrefix = getValueFromPath(staticData, removeFirst);
+            } else {
+              if (data) {
+                cellDataPrefix = getValueFromPath(
+                  data,
+                  cellDataPrefix
+                );
+              }
+            }
+          }
+        }
+        // if suffix is an array, check if it is a static data or a table single row data
+        if (cellDataSuffix) {
+          let isValArray = Array.isArray(cellDataSuffix);
+          if (isValArray) {
+            if (cellDataSuffix[0] === "$") {
+              const removeFirst = cellDataSuffix.slice(1);
+              cellDataSuffix = getValueFromPath(staticData, removeFirst);
+            } else {
+              if (data) {
+                cellDataSuffix = getValueFromPath(
+                  data,
+                  cellDataSuffix
+                );
+              }
+            }
+          }
+        }
         if (headerData !== null) {
           const isObject =
             checkObject(headerData[index]) || checkObject(headerData);
@@ -622,7 +661,13 @@ const tableObject = (layout, data, staticData) => {
             }
           }
         }
-        return object(cell, cellData, staticData, false, data);
+        if (cellDataPrefix) {
+          cellData = cellDataPrefix + (cellDataAfterPrefix || '') + cellData;
+        }
+        if (cellDataSuffix) {
+          cellData = cellData + (cellDataBeforeSuffix || '') + cellDataSuffix;
+        }
+        return object(cell, cellData, staticData, false, data, null, true);
       });
       while (headerRow.length < maxColumns) {
         headerRow.push({ text: "", style: "normalText" });

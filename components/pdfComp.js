@@ -580,11 +580,10 @@ const tableObject = (layout, data, staticData) => {
 
   if (layout.body) {
     table.body = [];
-
-    const maxColumns = Math.max(
-      layout.body.header ? layout.body.header.length : 0,
-      ...layout.body.rows.map((row) => row.length)
-    );
+    let maxColumns = layout.body.header ? layout.body.header.length : 0;
+    for (const row of layout.body.rows) {
+      maxColumns = Math.max(maxColumns, row.length);
+    }
 
     if (layout.body.header) {
       let headerData = null;
@@ -699,48 +698,57 @@ const tableObject = (layout, data, staticData) => {
         );
       }
 
+      // When rowData exists, iterate over rowData and use layout.body.rows as template
       for (const row of rowData) {
-        const tableRow = layout.body.rows.map((cell, index) => {
-          let cellData = null;
-          if (
-            cell.type === "table" &&
-            rowData !== null &&
-            cell.rowData !== undefined &&
-            cell.rowData !== null
-          ) {
+        for (const _row of layout.body.rows) {
+          // When rowData exists, layout.body.rows contains individual cell objects
+          // We need to create a table row from these cell objects
+          const tableRow = _row.map((cell, index) => {
+            let cellData = null;
             if (
-              cell.visible &&
-              evaluateCondition(cell.visible, data) === false
+              cell.type === "table" &&
+              rowData !== null &&
+              cell.rowData !== undefined &&
+              cell.rowData !== null
             ) {
-              return null;
-            }
-            return tableObject(cell, row, staticData);
-          } else {
-            const isArray = Array.isArray(cell.value);
-            if (isArray) {
-              cellData = getValueFromPath(row, cell.value);
-              if (cell.value === "table") {
-                if (
-                  cell.visible &&
-                  evaluateCondition(cell.visible, data) === false
-                ) {
-                  return null;
-                }
-                return tableObject(cell, data, staticData);
-              } else {
-                return object(cell, cellData, staticData, false, data, row);
+              if (
+                cell.visible &&
+                evaluateCondition(cell.visible, data) === false
+              ) {
+                return null;
               }
+              return tableObject(cell, row, staticData);
             } else {
-              cellData = cell.value;
-              return object(cell, cellData, staticData, false, data);
+              const isArray = Array.isArray(cell.value);
+              if (isArray) {
+                cellData = getValueFromPath(row, cell.value);
+                if (cell.type === "table") {
+                  if (
+                    cell.visible &&
+                    evaluateCondition(cell.visible, data) === false
+                  ) {
+                    return null;
+                  }
+                  return tableObject(cell, data, staticData);
+                } else {
+                  return object(cell, cellData, staticData, false, data, row);
+                }
+              } else {
+                if (cell.type === "table") {
+                  return tableObject(cell, row, staticData);
+                } else {
+                  cellData = cell.value;
+                  return object(cell, cellData, staticData, false, data);
+                }
+              }
             }
-          }
-        });
+          });
 
-        while (tableRow.length < maxColumns) {
-          tableRow.push({ text: "", style: "normalText" });
+          while (tableRow.length < maxColumns) {
+            tableRow.push({ text: "", style: "normalText" });
+          }
+          table.body.push(tableRow);
         }
-        table.body.push(tableRow);
       }
     } else {
       for (const row of layout.body.rows) {

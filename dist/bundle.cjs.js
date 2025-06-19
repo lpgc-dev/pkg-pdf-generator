@@ -4047,13 +4047,44 @@ var libExports$1 = requireLib$2();
 var pixelWidth = /*@__PURE__*/getDefaultExportFromCjs(libExports$1);
 
 const evaluateCondition = (conditionString, data) => {
+  // Function to sanitize keys for use in Function constructor, required as keys not following JS var naming rules break the function
+  const sanitizeKey = (key) => {
+    // Replace hyphens and other special characters with underscores
+    let sanitized = key.replace(/[^a-zA-Z0-9]/g, "_");
+    // Add prefix if key starts with a number
+    if (/^[0-9]/.test(sanitized)) {
+      sanitized = "key_" + sanitized;
+    }
+    return sanitized;
+  };
+
+  // Create a sanitized version of the data object
+  const sanitizedData = {};
+  Object.entries(data).forEach(([key, value]) => {
+    sanitizedData[sanitizeKey(key)] = value;
+  });
+
+  // Sanitize the condition string to use the sanitized keys
+  let sanitizedCondition = conditionString;
+  Object.keys(data).forEach((key) => {
+    const sanitizedKey = sanitizeKey(key);
+    if (key !== sanitizedKey) {
+      sanitizedCondition = sanitizedCondition.replace(
+        new RegExp(key, "g"),
+        sanitizedKey
+      );
+    }
+  });
+
   if (typeof conditionString !== "string" || conditionString.trim() === "") {
     return true; // Default to true if no valid condition is provided
   }
+
   try {
-    return new Function(...Object.keys(data), `return ${conditionString};`)(
-      ...Object.values(data)
-    );
+    return new Function(
+      ...Object.keys(sanitizedData),
+      `return ${sanitizedCondition};`
+    )(...Object.values(sanitizedData));
   } catch (error) {
     console.error("Error evaluating condition:", error);
     return false;
@@ -4281,7 +4312,9 @@ const object = (
   data = null,
   staticData = null,
   isSolo = false,
-  jsonData
+  jsonData,
+  tableSingleRowData = null,
+  ignorePrefixAndSuffix = false
 ) => {
   if (layout.visible && evaluateCondition(layout.visible, data) === false) {
     return {
@@ -4290,8 +4323,49 @@ const object = (
   }
 
   let valueData = layout.value ?? "";
-  let valueDataPrefix = layout.prefix ?? null;
-  let valueDataSuffix = layout.suffix ?? null;
+  let valueDataPrefix = ignorePrefixAndSuffix ? null : (layout.prefix ?? null);
+  let valueDataAfterPrefix = ignorePrefixAndSuffix
+    ? null
+    : (layout.afterPrefix ?? null);
+  // if prefix is an array, check if it is a static data or a table single row data
+  if (valueDataPrefix) {
+    let isValArray = Array.isArray(valueDataPrefix);
+    if (isValArray) {
+      if (valueDataPrefix[0] === "$") {
+        const removeFirst = valueDataPrefix.slice(1);
+        valueDataPrefix = getValueFromPath$1(staticData, removeFirst);
+      } else {
+        if (tableSingleRowData) {
+          valueDataPrefix = getValueFromPath$1(
+            tableSingleRowData,
+            valueDataPrefix
+          );
+        }
+      }
+    }
+  }
+
+  let valueDataSuffix = ignorePrefixAndSuffix ? null : (layout.suffix ?? null);
+  let valueDataBeforeSuffix = ignorePrefixAndSuffix
+    ? null
+    : (layout.beforeSuffix ?? null);
+  // if suffix is an array, check if it is a static data or a table single row data
+  if (valueDataSuffix) {
+    let isValArray = Array.isArray(valueDataSuffix);
+    if (isValArray) {
+      if (valueDataSuffix[0] === "$") {
+        const removeFirst = valueDataSuffix.slice(1);
+        valueDataSuffix = getValueFromPath$1(staticData, removeFirst);
+      } else {
+        if (tableSingleRowData) {
+          valueDataSuffix = getValueFromPath$1(
+            tableSingleRowData,
+            valueDataSuffix
+          );
+        }
+      }
+    }
+  }
   let valueDataToFixed = layout.toFixed || 0;
 
   let itemStyle = null;
@@ -4315,15 +4389,20 @@ const object = (
   }
   // if the value is a decimal, format it to 2 decimal places
   if (valueData && valueDataToFixed > 0) {
-    valueData = valueData.toFixed(valueDataToFixed);
+    try {
+      if (valueData && typeof valueData === "string") {
+        valueData = parseFloat(valueData);
+      }
+      valueData = valueData.toFixed(valueDataToFixed);
+    } catch (error) {}
   }
   // if there is a prefix, add it to the value
   if (valueDataPrefix) {
-    valueData = valueDataPrefix + valueData;
+    valueData = valueDataPrefix + (valueDataAfterPrefix || "") + valueData;
   }
   // if there is a suffix, add it to the value
   if (valueDataSuffix) {
-    valueData = valueData + valueDataSuffix;
+    valueData = valueData + (valueDataBeforeSuffix || "") + valueDataSuffix;
   }
 
   if (layout.condition) {
@@ -4357,6 +4436,95 @@ const object = (
         }
       }
     }
+  }
+  if (layout.type === "stack") {
+    const { content, ...rest } = layout; // Extract content, keep the rest
+
+    const contentArray = Array.isArray(content);
+    if (!contentArray) {
+      return {};
+    }
+    const newContent = content.map((item) => {
+      const isValArray = Array.isArray(item.value);
+      if (isValArray) {
+        if (item.value[0] === "$") {
+          const removeFirst = item.value.slice(1);
+          item.value = getValueFromPath$1(staticData, removeFirst);
+        } else {
+          item.value = getValueFromPath$1(jsonData, item.value);
+        }
+      }
+      if (item.type === "text") {
+        const additionalProps = Object.entries(item).reduce(
+          (acc, [key, value]) => {
+            if (!["type", "value", "alignment", "style"].includes(key)) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {}
+        );
+        if (item.prefix) {
+          const isValArray = Array.isArray(item.prefix);
+          if (isValArray) {
+            if (item.prefix[0] === "$") {
+              const removeFirst = item.prefix.slice(1);
+              item.prefix = getValueFromPath$1(staticData, removeFirst);
+            } else {
+              item.prefix = getValueFromPath$1(jsonData, item.prefix);
+            }
+          }
+          item.value = item.prefix + (item.afterPrefix || "") + item.value;
+        }
+        if (item.suffix) {
+          const isValArray = Array.isArray(item.suffix);
+          if (isValArray) {
+            if (item.suffix[0] === "$") {
+              const removeFirst = item.suffix.slice(1);
+              item.suffix = getValueFromPath$1(staticData, removeFirst);
+            } else {
+              item.suffix = getValueFromPath$1(jsonData, item.suffix);
+            }
+          }
+          item.value = item.value + (item.beforeSuffix || "") + item.suffix;
+        }
+        return {
+          text: item.value,
+          alignment: item.alignment ?? "left",
+          style:
+            item.style !== null ? item.style : (layout.style ?? "normalText"),
+          ...additionalProps,
+        };
+      } else if (item.type === "image") {
+        // default
+        let imageContent = {
+          image: item.value,
+        };
+
+        // Copy all image properties except width, height, value, type
+        const imageProps = Object.entries(item).reduce((acc, [key, value]) => {
+          if (!["value", "type"].includes(key)) {
+            acc[key] = value;
+          }
+          return acc;
+        }, {});
+        imageContent = {
+          ...imageContent,
+          ...imageProps,
+        };
+        return imageContent;
+      } else if (item.type === "table") {
+        const tableContent = tableObject(item, data, staticData);
+        return tableContent;
+      }
+    });
+
+    const stackContent = {
+      stack: [...newContent],
+      ...rest, // Spread remaining properties
+    };
+
+    return stackContent;
   }
 
   if (layout.type === "qr") {
@@ -4399,9 +4567,17 @@ const object = (
     let svgContent = {
       svg: decodedSvg,
     };
-    if (layout.width) svgContent.width = layout.width;
-    if (layout.height) svgContent.height = layout.height;
-    return svgContent;
+    // Copy all image properties except width, height, value, type
+    const svgProps = Object.entries(layout).reduce((acc, [key, value]) => {
+      if (!["value", "type"].includes(key)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    return {
+      ...svgContent,
+      ...svgProps,
+    };
   } else {
     if (layout.format && layout.format.type === "date") {
       if (valueData === null || valueData === undefined) {
@@ -4423,7 +4599,7 @@ const object = (
     return {
       text: valueData,
       alignment: layout.alignment ?? "left",
-      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText",
+      style: itemStyle !== null ? itemStyle : (layout.style ?? "normalText"),
       ...additionalProps,
     };
   }
@@ -4432,10 +4608,11 @@ const object = (
 // Function to get a nested value from an object based on a path
 function getValueFromPath$1(obj, path) {
   // Use reduce to traverse the object and get the value at the specified path
-  return path.reduce(
+  const result = path.reduce(
     (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
     obj
   );
+  return result === null || result === undefined ? "" : result;
 }
 
 // Utility function to check if a variable is an object (excluding arrays)
@@ -4451,11 +4628,10 @@ const tableObject = (layout, data, staticData) => {
 
   if (layout.body) {
     table.body = [];
-
-    const maxColumns = Math.max(
-      layout.body.header ? layout.body.header.length : 0,
-      ...layout.body.rows.map((row) => row.length)
-    );
+    let maxColumns = layout.body.header ? layout.body.header.length : 0;
+    for (const row of layout.body.rows) {
+      maxColumns = Math.max(maxColumns, row.length);
+    }
 
     if (layout.body.header) {
       let headerData = null;
@@ -4475,6 +4651,38 @@ const tableObject = (layout, data, staticData) => {
 
       const headerRow = layout.body.header.map((cell, index) => {
         let cellData = null;
+        let cellDataPrefix = cell.prefix ?? null;
+        let cellDataAfterPrefix = cell.afterPrefix ?? null;
+        let cellDataBeforeSuffix = cell.beforeSuffix ?? null;
+        let cellDataSuffix = cell.suffix ?? null;
+        // if prefix is an array, check if it is a static data or a table single row data
+        if (cellDataPrefix) {
+          let isValArray = Array.isArray(cellDataPrefix);
+          if (isValArray) {
+            if (cellDataPrefix[0] === "$") {
+              const removeFirst = cellDataPrefix.slice(1);
+              cellDataPrefix = getValueFromPath$1(staticData, removeFirst);
+            } else {
+              if (data) {
+                cellDataPrefix = getValueFromPath$1(data, cellDataPrefix);
+              }
+            }
+          }
+        }
+        // if suffix is an array, check if it is a static data or a table single row data
+        if (cellDataSuffix) {
+          let isValArray = Array.isArray(cellDataSuffix);
+          if (isValArray) {
+            if (cellDataSuffix[0] === "$") {
+              const removeFirst = cellDataSuffix.slice(1);
+              cellDataSuffix = getValueFromPath$1(staticData, removeFirst);
+            } else {
+              if (data) {
+                cellDataSuffix = getValueFromPath$1(data, cellDataSuffix);
+              }
+            }
+          }
+        }
         if (headerData !== null) {
           const isObject =
             checkObject(headerData[index]) || checkObject(headerData);
@@ -4494,7 +4702,13 @@ const tableObject = (layout, data, staticData) => {
             }
           }
         }
-        return object(cell, cellData, staticData, false, data);
+        if (cellDataPrefix) {
+          cellData = cellDataPrefix + (cellDataAfterPrefix || "") + cellData;
+        }
+        if (cellDataSuffix) {
+          cellData = cellData + (cellDataBeforeSuffix || "") + cellDataSuffix;
+        }
+        return object(cell, cellData, staticData, false, data, null, true);
       });
       while (headerRow.length < maxColumns) {
         headerRow.push({ text: "", style: "normalText" });
@@ -4526,48 +4740,57 @@ const tableObject = (layout, data, staticData) => {
         );
       }
 
+      // When rowData exists, iterate over rowData and use layout.body.rows as template
       for (const row of rowData) {
-        const tableRow = layout.body.rows.map((cell, index) => {
-          let cellData = null;
-          if (
-            cell.type === "table" &&
-            rowData !== null &&
-            cell.rowData !== undefined &&
-            cell.rowData !== null
-          ) {
+        for (const _row of layout.body.rows) {
+          // When rowData exists, layout.body.rows contains individual cell objects
+          // We need to create a table row from these cell objects
+          const tableRow = _row.map((cell, index) => {
+            let cellData = null;
             if (
-              cell.visible &&
-              evaluateCondition(cell.visible, data) === false
+              cell.type === "table" &&
+              rowData !== null &&
+              cell.rowData !== undefined &&
+              cell.rowData !== null
             ) {
-              return null;
-            }
-            return tableObject(cell, row, staticData);
-          } else {
-            const isArray = Array.isArray(cell.value);
-            if (isArray) {
-              cellData = getValueFromPath$1(row, cell.value);
-              if (cell.value === "table") {
-                if (
-                  cell.visible &&
-                  evaluateCondition(cell.visible, data) === false
-                ) {
-                  return null;
-                }
-                return tableObject(cell, data, staticData);
-              } else {
-                return object(cell, cellData, staticData, false, data);
+              if (
+                cell.visible &&
+                evaluateCondition(cell.visible, data) === false
+              ) {
+                return null;
               }
+              return tableObject(cell, row, staticData);
             } else {
-              cellData = cell.value;
-              return object(cell, cellData, staticData, false, data);
+              const isArray = Array.isArray(cell.value);
+              if (isArray) {
+                cellData = getValueFromPath$1(row, cell.value);
+                if (cell.type === "table") {
+                  if (
+                    cell.visible &&
+                    evaluateCondition(cell.visible, data) === false
+                  ) {
+                    return null;
+                  }
+                  return tableObject(cell, data, staticData);
+                } else {
+                  return object(cell, cellData, staticData, false, data, row);
+                }
+              } else {
+                if (cell.type === "table") {
+                  return tableObject(cell, row, staticData);
+                } else {
+                  cellData = cell.value;
+                  return object(cell, cellData, staticData, false, data);
+                }
+              }
             }
-          }
-        });
+          });
 
-        while (tableRow.length < maxColumns) {
-          tableRow.push({ text: "", style: "normalText" });
+          while (tableRow.length < maxColumns) {
+            tableRow.push({ text: "", style: "normalText" });
+          }
+          table.body.push(tableRow);
         }
-        table.body.push(tableRow);
       }
     } else {
       for (const row of layout.body.rows) {
@@ -4641,7 +4864,13 @@ const tableObject = (layout, data, staticData) => {
     } else if (layout.layout === "onlyVerticalLinesWithClosedBorders") {
       tempTable.layout = {
         hLineWidth: function (i, node) {
-          return i === 0 || i === 1 || i === node.table.body.length ? 1 : 0; // Horizontal lines for header and bottom
+          return i === 0 || i === 1 || i === node.table.body.length
+            ? 1
+            : node.onlyVerticalLinesWithClosedBorders_extra_row_height !=
+                undefined &&
+              node.onlyVerticalLinesWithClosedBorders_extra_row_height != null
+            ? node.onlyVerticalLinesWithClosedBorders_extra_row_height
+            : 0.5; // Horizontal lines for header and bottom
         },
         vLineWidth: function (i, node) {
           return 1; // All vertical lines
@@ -4650,10 +4879,16 @@ const tableObject = (layout, data, staticData) => {
           return "black";
         },
         hLineColor: function (i, node) {
-          return "black";
+          return i === 0 || i === 1 || i === node.table.body.length
+            ? "black"
+            : node.onlyVerticalLinesWithClosedBorders_extra_row_color !=
+                undefined &&
+              node.onlyVerticalLinesWithClosedBorders_extra_row_color != null
+            ? node.onlyVerticalLinesWithClosedBorders_extra_row_color
+            : "lightgray";
         },
-        paddingLeft: function (i, node) {
-          return 4;
+        paddingLeft: function () {
+          return 0;
         },
         paddingRight: function (i, node) {
           return 4;
@@ -4672,26 +4907,18 @@ const tableObject = (layout, data, staticData) => {
             // Get text content and font size
             const text = node.table.body[node.table.body.length - 1][0].text;
             var width = pixelWidth(text, { size: 10 });
-            var lines = width / 250;
-            // adding extra bufferr lines based on the lines, as we need to take of the line break if word can't fit in at the end of the line
-            if (lines > 5 && lines < 10) {
-              lines++;
-            } else if (lines > 10) {
-              lines += 2;
-            }
+            var lines = Math.ceil(width / 250);
             // Get how far down the page the current element is
             const currentHeight = currentPosition.top;
-
-            // Calculate remaining space between the bottom of the table and end of page
-            // 600 because we want the table to be appeared till certain height
-            // lines * 10 = as we've assumes 1 line is about 10px height
-            let paddingBottom = 600 - currentHeight - lines * 10;
+            let paddingBottom =
+              currentPosition.pageInnerHeight +
+              (280 - currentHeight) -
+              lines * 10;
             // custom logic to handle spacing if it goes to negative
             paddingBottom =
-              paddingBottom < 0 ? 660 + paddingBottom : paddingBottom;
-
+              paddingBottom < 0 ? 280 - paddingBottom : paddingBottom;
             // Return this space as padding to fill gap to bottom of page
-            return paddingBottom;
+            return paddingBottom > 300 ? 300 : paddingBottom;
           }
 
           // For all other rows, use the default padding of 2
@@ -4831,84 +5058,127 @@ const pdfDefinition = (layout, data) => {
 
     // Handle document footer if specified in layout
     if (layout.footer) {
-      let footerContent = [];
+      docDefinition.footer = function (currentPage, pageCount) {
+        // pre build footer content
+        let footerContent = [];
 
-      // Generate footer content first
-      for (const footer of layout.footer.contents) {
-        footerContent.push(object(footer, data, layout.static, true, data)); // Generate footer content
-      }
+        // // Generate footer content first
+        for (const footer of layout.footer.contents) {
+          footerContent.push(object(footer, data, layout.static, true, data)); // Generate footer content
+        }
 
-      let footerObj = [];
-
-      // Add divider above footer by default unless explicitly set to false
-      const showDivider = layout.footer.showDivider !== false;
-      if (showDivider) {
-        footerObj.push({
-          stack: [
-            {
-              canvas: [
-                {
-                  type: "line",
-                  x1: 0,
-                  y1: 0,
-                  x2: 1000, // Full page width
-                  y2: 0,
-                  lineWidth: 1,
-                  margin: [0, 0, 0, 0], // Remove any margin
-                },
-              ],
-              margin: [0, 0, 0, 0], // Remove margin from canvas container
-            },
-            {
-              columns: footerContent,
-            },
-          ],
-          margin: [0, 0, 0, 0], // Remove margin from stack
-        });
-      } else {
-        footerObj.push({
-          stack: [
-            {
-              columns: footerContent,
-            },
-          ],
-        });
-      }
-
-      const col = {
-        stack: footerObj, // Stack divider and content vertically
-        margin: [0, 0, 0, 0] // Remove any default margins
-      };
-      if (layout.footer.margin) col.margin = layout.footer.margin; // Apply footer margin if specified
-      
-      // for pagination indicator  
-      let paginateTxt = {
-        text: "",
-        alignment: "right",
-        margin: [0, 0, 25, 0],
-      };
-      // Check if footer should only appear on last page
-      if (layout.footer.lastPageOnly) {
-        docDefinition.footer = function (currentPage, pageCount) {
-          if (currentPage === pageCount) {
-            return col;
+        if (Array.isArray(footerContent) && footerContent.length > 0) {
+          for (const footer of footerContent) {
+            if (
+              footer &&
+              typeof footer === "object" &&
+              Array.isArray(footer.stack)
+            ) {
+              for (const item of footer.stack) {
+                if (
+                  item &&
+                  typeof item === "object" &&
+                  item.table &&
+                  Array.isArray(item.table.body)
+                ) {
+                  for (const bodyItem of item.table.body) {
+                    if (Array.isArray(bodyItem)) {
+                      for (const cell of bodyItem) {
+                        if (
+                          cell &&
+                          cell.showOnlyOnLastPage &&
+                          currentPage != pageCount
+                        ) {
+                          if (cell.text) cell.text = ""; // Set text to an empty string
+                          if (cell.svg)
+                            cell.svg = `<svg xmlns="http://www.w3.org/2000/svg"></svg>`; // Set svg to an empty string
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
+        }
+
+        let footerContentObj = [];
+
+        // // Add divider above footer by default unless explicitly set to false
+        const showDivider = layout.footer.showDivider == true;
+        if (showDivider) {
+          footerContentObj.push({
+            stack: [
+              {
+                canvas: [
+                  {
+                    type: "line",
+                    x1: 0,
+                    y1: 0,
+                    x2: 1000, // Full page width
+                    y2: 0,
+                    lineWidth: 1,
+                    margin: [0, 0, 0, 0], // Remove any margin
+                  },
+                ],
+                margin: [0, 0, 0, 0], // Remove margin from canvas container
+              },
+              {
+                columns: footerContent,
+              },
+            ],
+            margin: layout.footer.margin ? layout.footer.margin : [0, 0, 0, 0],
+          });
+        } else {
+          footerContentObj.push({
+            stack: [
+              {
+                columns: footerContent,
+              },
+            ],
+            margin: layout.footer.margin ? layout.footer.margin : [0, 0, 0, 0],
+          });
+        }
+
+        // for pagination indicator
+        let paginateTxt = {
+          text: "",
+          alignment: "right",
+          margin: [0, 10, 0, 0],
+          fontSize: 9,
         };
-      } else {
-        docDefinition.footer = function (currentPage, pageCount) {
-          if (layout.footer.showPageNumber) {
-            paginateTxt.text =
-              "page " + currentPage.toString() + " of " + pageCount;
-            col.stack[0].stack.push(paginateTxt);
+        // add page number
+        if (layout.footer.showPageNumber) {
+          paginateTxt.text =
+            "Page " + currentPage.toString() + " of " + pageCount;
+          let leftFooterTable = null;
+          if (layout.footer.leftFooter) {
+            if (layout.footer.leftFooter.type === "table") {
+              leftFooterTable = tableObject(
+                layout.footer.leftFooter,
+                data,
+                layout.static
+              );
+            }
           }
-          return col;
-        };
-      }
+
+          footerContentObj[0].stack.push({
+            columns: [
+              leftFooterTable || {
+                ...paginateTxt,
+                text: "LEFT",
+                alignment: "left",
+              },
+              paginateTxt,
+            ],
+          });
+        }
+        return footerContentObj;
+      };
     }
     return docDefinition;
   } catch (error) {
     throw new Error(`PDF generation failed: ${error.message}`);
-    //return error; // Return error for handling
   }
 };
 
@@ -139225,15 +139495,54 @@ class PDFMerger extends PDFMergerBase {
   }
 }
 
+// ENUMS
+const MERGE_TYPE = {
+  CONDITIONAL: "conditional_mergePdf",
+  MANDATORY: "mandatory_mergePdf",
+};
+
 // Utility functions
 const isBrowser = () => typeof window !== "undefined";
 
 const getValueFromPath = (obj, path) => {
-  return path.reduce(
+  const result = path.reduce(
     (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
     obj
   );
+  return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
+function findAndSetKeyInObject(obj, keyToFind, newValue, searchInPrivate = false) {
+  let result = null;
+  let mainKey = keyToFind;
+  let property = null;
+
+  // Handle string paths
+  {
+    [mainKey, property] = keyToFind.split(".");
+  }
+
+  function recursiveSearch(obj) {
+    if (obj && typeof obj === "object") {
+      if (obj.hasOwnProperty(mainKey)) {
+        // If we have a property to access, get that instead
+        result = property ? obj[mainKey][property] : obj[mainKey];
+        return;
+      }
+      for (const key in obj) {
+        // Skip _private_ keys if searchInPrivate is false
+        if (!searchInPrivate && key.startsWith("_private_")) {
+          continue;
+        }
+        if (typeof obj[key] === "object") {
+          recursiveSearch(obj[key]);
+        }
+      }
+    }
+  }
+
+  recursiveSearch(obj);
+  return result;
+}
 
 const base64ToFile = (base64, fileName, contentType = "") => {
   const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
@@ -139259,9 +139568,14 @@ const base64ToFile = (base64, fileName, contentType = "") => {
 
 const createPDFFromImage = async (pdfDoc, blob, arrayBuffer) => {
   const margin = 40;
-  const image = blob.type === "image/jpeg" 
-    ? await pdfDoc.embedJpg(isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer))
-    : await pdfDoc.embedPng(isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer));
+  const image =
+    blob.type === "image/jpeg"
+      ? await pdfDoc.embedJpg(
+          isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer)
+        )
+      : await pdfDoc.embedPng(
+          isBrowser() ? arrayBuffer : Buffer.from(arrayBuffer)
+        );
 
   const page = pdfDoc.addPage([612, 792]); // LETTER size
   const { width, height } = page.getSize();
@@ -139289,8 +139603,8 @@ async function getNetworkAttachment(url) {
 
   if (blob.type === "application/pdf") {
     return isBrowser() ? new Uint8Array(arrayBuffer) : Buffer.from(arrayBuffer);
-  } 
-  
+  }
+
   if (blob.type.startsWith("image/")) {
     const pdfDoc = await PDFDocument.create();
     await createPDFFromImage(pdfDoc, blob, arrayBuffer);
@@ -139305,13 +139619,27 @@ const mergePDFs = async (pdfBase64Data, pdfAttachments, isBrowserEnv) => {
   const merger = new PDFMerger();
 
   if (isBrowserEnv) {
-    const mainPdfFile = base64ToFile(pdfBase64Data, "main.pdf", "application/pdf");
+    const mainPdfFile = base64ToFile(
+      pdfBase64Data,
+      "main.pdf",
+      "application/pdf"
+    );
     await merger.add(mainPdfFile);
-
     for (const attachment of pdfAttachments) {
+      if (!attachment) continue;
+
       if (attachment.url) {
         const attachmentBuffer = await getNetworkAttachment(attachment.url);
-        if (attachmentBuffer) await merger.add(attachmentBuffer);
+        if (attachmentBuffer) {
+          await merger.add(attachmentBuffer);
+        }
+      } else if (attachment.value && attachment.type === "application/pdf") {
+        const attachmentBuffer = base64ToFile(
+          attachment.value,
+          attachment.name,
+          attachment.type
+        );
+        await merger.add(attachmentBuffer);
       }
     }
 
@@ -139359,14 +139687,55 @@ const pdfBase64 = async (layout, data) => {
   }
 
   // Handle additional PDF content
-  if (layout.additionalContent?.type === "mergePdf") {
-    const pdfAttachments = getValueFromPath(data, layout.additionalContent.value);
-    if (pdfAttachments?.length > 0) {
-      try {
-        pdfBase64Data = await mergePDFs(pdfBase64Data, pdfAttachments, isBrowser());
-      } catch (error) {
-        console.error("Error merging PDFs:", error);
-        // Fall back to original PDF if merge fails
+  if (Array.isArray(layout.additionalContent)) {
+    for (const content of layout.additionalContent) {
+      if (content.type === MERGE_TYPE.CONDITIONAL) {
+        let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
+        if (val === false || val === null) {
+          // Skipping mergePDFs
+          continue;
+        }
+        const pdfAttachments = getValueFromPath(data, content.value);
+
+
+        if (pdfAttachments?.length > 0) {
+          try {
+            pdfBase64Data = await mergePDFs(
+              pdfBase64Data,
+              pdfAttachments,
+              isBrowser()
+            );
+          } catch (error) {
+            console.error("Error merging PDFs:", error);
+            // Fall back to original PDF if merge fails
+          }
+        }
+      } else if (content.type === MERGE_TYPE.MANDATORY) {
+        // here check if content.value is array and if array then inside it has string or obj ?
+        let _isDynamicVal = false;
+        if (Array.isArray(content.value) && content.value.length > 0) {
+          _isDynamicVal = content.value.every(
+            (item) => typeof item === "string"
+          );
+        }
+        let pdfAttachments = [];
+        if (_isDynamicVal) {
+          pdfAttachments = getValueFromPath(data, content.value);
+        } else {
+          pdfAttachments = content.value;
+        }
+        if (pdfAttachments?.length > 0) {
+          try {
+            pdfBase64Data = await mergePDFs(
+              pdfBase64Data,
+              pdfAttachments,
+              isBrowser()
+            );
+          } catch (error) {
+            console.error("Error merging PDFs:", error);
+            // Fall back to original PDF if merge fails
+          }
+        }
       }
     }
   }

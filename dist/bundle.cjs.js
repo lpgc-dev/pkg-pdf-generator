@@ -4151,9 +4151,8 @@ const generateSignatureTable = (content, data) => {
           {
             text: content.title ?? "Signatures", // Default title if not provided
             alignment: "center",
-            margin: [10, 5, 10, 5], // Add margin inside the border
-            fontSize: 14,
             bold: true,
+            margin: [0, 2, 0, 2],
           },
         ],
       ],
@@ -4274,7 +4273,7 @@ const generateSignatureTable = (content, data) => {
             body: [currentRow],
             headerRows: 0,
             keepWithHeaderRows: 1,
-            dontBreakRows: true,
+            dontBreakRows: false,
           },
         },
       ],
@@ -4290,7 +4289,7 @@ const generateSignatureTable = (content, data) => {
   // Build and return the full table
   return {
     // unbreakable attempts to keep the entire stack on one page
-    unbreakable: true,
+    unbreakable: false,
     stack: [
       titleWithBorder,
       {
@@ -4323,8 +4322,10 @@ const object = (
   }
 
   let valueData = layout.value ?? "";
-  let valueDataPrefix = ignorePrefixAndSuffix ? null : layout.prefix ?? null;
-  let valueDataAfterPrefix = ignorePrefixAndSuffix ? null : layout.afterPrefix ?? null;
+  let valueDataPrefix = ignorePrefixAndSuffix ? null : (layout.prefix ?? null);
+  let valueDataAfterPrefix = ignorePrefixAndSuffix
+    ? null
+    : (layout.afterPrefix ?? null);
   // if prefix is an array, check if it is a static data or a table single row data
   if (valueDataPrefix) {
     let isValArray = Array.isArray(valueDataPrefix);
@@ -4343,8 +4344,10 @@ const object = (
     }
   }
 
-  let valueDataSuffix = ignorePrefixAndSuffix ? null : layout.suffix ?? null;
-  let valueDataBeforeSuffix = ignorePrefixAndSuffix ? null : layout.beforeSuffix ?? null;
+  let valueDataSuffix = ignorePrefixAndSuffix ? null : (layout.suffix ?? null);
+  let valueDataBeforeSuffix = ignorePrefixAndSuffix
+    ? null
+    : (layout.beforeSuffix ?? null);
   // if suffix is an array, check if it is a static data or a table single row data
   if (valueDataSuffix) {
     let isValArray = Array.isArray(valueDataSuffix);
@@ -4470,7 +4473,7 @@ const object = (
               item.prefix = getValueFromPath$1(jsonData, item.prefix);
             }
           }
-          item.value = item.prefix + (item.afterPrefix || '') + item.value;
+          item.value = item.prefix + (item.afterPrefix || "") + item.value;
         }
         if (item.suffix) {
           const isValArray = Array.isArray(item.suffix);
@@ -4482,13 +4485,13 @@ const object = (
               item.suffix = getValueFromPath$1(jsonData, item.suffix);
             }
           }
-          item.value = item.value + (item.beforeSuffix || '') + item.suffix;
+          item.value = item.value + (item.beforeSuffix || "") + item.suffix;
         }
         return {
           text: item.value,
           alignment: item.alignment ?? "left",
           style:
-            item.style !== null ? item.style : layout.style ?? "normalText",
+            item.style !== null ? item.style : (layout.style ?? "normalText"),
           ...additionalProps,
         };
       } else if (item.type === "image") {
@@ -4595,7 +4598,7 @@ const object = (
     return {
       text: valueData,
       alignment: layout.alignment ?? "left",
-      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText",
+      style: itemStyle !== null ? itemStyle : (layout.style ?? "normalText"),
       ...additionalProps,
     };
   }
@@ -4644,7 +4647,7 @@ const tableObject = (layout, data, staticData) => {
       if (checkObject2) {
         headerData = getValueFromPath$1(data, layout.headerData);
       }
-      
+
       const headerRow = layout.body.header.map((cell, index) => {
         let cellData = null;
         let cellDataPrefix = cell.prefix ?? null;
@@ -4660,10 +4663,7 @@ const tableObject = (layout, data, staticData) => {
               cellDataPrefix = getValueFromPath$1(staticData, removeFirst);
             } else {
               if (data) {
-                cellDataPrefix = getValueFromPath$1(
-                  data,
-                  cellDataPrefix
-                );
+                cellDataPrefix = getValueFromPath$1(data, cellDataPrefix);
               }
             }
           }
@@ -4677,10 +4677,7 @@ const tableObject = (layout, data, staticData) => {
               cellDataSuffix = getValueFromPath$1(staticData, removeFirst);
             } else {
               if (data) {
-                cellDataSuffix = getValueFromPath$1(
-                  data,
-                  cellDataSuffix
-                );
+                cellDataSuffix = getValueFromPath$1(data, cellDataSuffix);
               }
             }
           }
@@ -4705,10 +4702,10 @@ const tableObject = (layout, data, staticData) => {
           }
         }
         if (cellDataPrefix) {
-          cellData = cellDataPrefix + (cellDataAfterPrefix || '') + cellData;
+          cellData = cellDataPrefix + (cellDataAfterPrefix || "") + cellData;
         }
         if (cellDataSuffix) {
-          cellData = cellData + (cellDataBeforeSuffix || '') + cellDataSuffix;
+          cellData = cellData + (cellDataBeforeSuffix || "") + cellDataSuffix;
         }
         return object(cell, cellData, staticData, false, data, null, true);
       });
@@ -4744,7 +4741,9 @@ const tableObject = (layout, data, staticData) => {
 
       // When rowData exists, iterate over rowData and use layout.body.rows as template
       for (const row of rowData) {
+        // console.log("row", row, layout.body.rows);
         for (const _row of layout.body.rows) {
+          // console.log("_row", _row);
           // When rowData exists, layout.body.rows contains individual cell objects
           // We need to create a table row from these cell objects
           const tableRow = _row.map((cell, index) => {
@@ -4869,10 +4868,10 @@ const tableObject = (layout, data, staticData) => {
           return i === 0 || i === 1 || i === node.table.body.length
             ? 1
             : node.onlyVerticalLinesWithClosedBorders_extra_row_height !=
-                undefined &&
-              node.onlyVerticalLinesWithClosedBorders_extra_row_height != null
-            ? node.onlyVerticalLinesWithClosedBorders_extra_row_height
-            : 0.5; // Horizontal lines for header and bottom
+                  undefined &&
+                node.onlyVerticalLinesWithClosedBorders_extra_row_height != null
+              ? node.onlyVerticalLinesWithClosedBorders_extra_row_height
+              : 0.5; // Horizontal lines for header and bottom
         },
         vLineWidth: function (i, node) {
           return 1; // All vertical lines
@@ -4884,10 +4883,10 @@ const tableObject = (layout, data, staticData) => {
           return i === 0 || i === 1 || i === node.table.body.length
             ? "black"
             : node.onlyVerticalLinesWithClosedBorders_extra_row_color !=
-                undefined &&
-              node.onlyVerticalLinesWithClosedBorders_extra_row_color != null
-            ? node.onlyVerticalLinesWithClosedBorders_extra_row_color
-            : "lightgray";
+                  undefined &&
+                node.onlyVerticalLinesWithClosedBorders_extra_row_color != null
+              ? node.onlyVerticalLinesWithClosedBorders_extra_row_color
+              : "lightgray";
         },
         paddingLeft: function () {
           return 0;

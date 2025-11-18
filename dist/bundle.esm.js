@@ -4321,10 +4321,8 @@ const object = (
   }
 
   let valueData = layout.value ?? "";
-  let valueDataPrefix = ignorePrefixAndSuffix ? null : (layout.prefix ?? null);
-  let valueDataAfterPrefix = ignorePrefixAndSuffix
-    ? null
-    : (layout.afterPrefix ?? null);
+  let valueDataPrefix = ignorePrefixAndSuffix ? null : layout.prefix ?? null;
+  let valueDataAfterPrefix = ignorePrefixAndSuffix ? null : layout.afterPrefix ?? null;
   // if prefix is an array, check if it is a static data or a table single row data
   if (valueDataPrefix) {
     let isValArray = Array.isArray(valueDataPrefix);
@@ -4343,10 +4341,8 @@ const object = (
     }
   }
 
-  let valueDataSuffix = ignorePrefixAndSuffix ? null : (layout.suffix ?? null);
-  let valueDataBeforeSuffix = ignorePrefixAndSuffix
-    ? null
-    : (layout.beforeSuffix ?? null);
+  let valueDataSuffix = ignorePrefixAndSuffix ? null : layout.suffix ?? null;
+  let valueDataBeforeSuffix = ignorePrefixAndSuffix ? null : layout.beforeSuffix ?? null;
   // if suffix is an array, check if it is a static data or a table single row data
   if (valueDataSuffix) {
     let isValArray = Array.isArray(valueDataSuffix);
@@ -4472,7 +4468,7 @@ const object = (
               item.prefix = getValueFromPath$1(jsonData, item.prefix);
             }
           }
-          item.value = item.prefix + (item.afterPrefix || "") + item.value;
+          item.value = item.prefix + (item.afterPrefix || '') + item.value;
         }
         if (item.suffix) {
           const isValArray = Array.isArray(item.suffix);
@@ -4484,13 +4480,13 @@ const object = (
               item.suffix = getValueFromPath$1(jsonData, item.suffix);
             }
           }
-          item.value = item.value + (item.beforeSuffix || "") + item.suffix;
+          item.value = item.value + (item.beforeSuffix || '') + item.suffix;
         }
         return {
           text: item.value,
           alignment: item.alignment ?? "left",
           style:
-            item.style !== null ? item.style : (layout.style ?? "normalText"),
+            item.style !== null ? item.style : layout.style ?? "normalText",
           ...additionalProps,
         };
       } else if (item.type === "image") {
@@ -4597,7 +4593,7 @@ const object = (
     return {
       text: valueData,
       alignment: layout.alignment ?? "left",
-      style: itemStyle !== null ? itemStyle : (layout.style ?? "normalText"),
+      style: itemStyle !== null ? itemStyle : layout.style ?? "normalText",
       ...additionalProps,
     };
   }
@@ -4646,7 +4642,7 @@ const tableObject = (layout, data, staticData) => {
       if (checkObject2) {
         headerData = getValueFromPath$1(data, layout.headerData);
       }
-
+      
       const headerRow = layout.body.header.map((cell, index) => {
         let cellData = null;
         let cellDataPrefix = cell.prefix ?? null;
@@ -4662,7 +4658,10 @@ const tableObject = (layout, data, staticData) => {
               cellDataPrefix = getValueFromPath$1(staticData, removeFirst);
             } else {
               if (data) {
-                cellDataPrefix = getValueFromPath$1(data, cellDataPrefix);
+                cellDataPrefix = getValueFromPath$1(
+                  data,
+                  cellDataPrefix
+                );
               }
             }
           }
@@ -4676,7 +4675,10 @@ const tableObject = (layout, data, staticData) => {
               cellDataSuffix = getValueFromPath$1(staticData, removeFirst);
             } else {
               if (data) {
-                cellDataSuffix = getValueFromPath$1(data, cellDataSuffix);
+                cellDataSuffix = getValueFromPath$1(
+                  data,
+                  cellDataSuffix
+                );
               }
             }
           }
@@ -4701,10 +4703,10 @@ const tableObject = (layout, data, staticData) => {
           }
         }
         if (cellDataPrefix) {
-          cellData = cellDataPrefix + (cellDataAfterPrefix || "") + cellData;
+          cellData = cellDataPrefix + (cellDataAfterPrefix || '') + cellData;
         }
         if (cellDataSuffix) {
-          cellData = cellData + (cellDataBeforeSuffix || "") + cellDataSuffix;
+          cellData = cellData + (cellDataBeforeSuffix || '') + cellDataSuffix;
         }
         return object(cell, cellData, staticData, false, data, null, true);
       });
@@ -5200,7 +5202,7 @@ const processArray = (content, data, staticData) => {
   return definedArray;
 };
 
-var __dirname$2 = '/Users/priyank.maniya/Documents/Projects/pkg-pdf-generator/node_modules/@foliojs-fork/pdfkit/js';
+var __dirname$2 = '/Users/priyank.maniya/Documents/Projects/Phoenix/pkg-pdf-generator/node_modules/@foliojs-fork/pdfkit/js';
 
 var domain;
 
@@ -22394,7 +22396,7 @@ var _polyfillNode_fs = /*#__PURE__*/Object.freeze({
 	default: fs
 });
 
-var __dirname$1 = '/Users/priyank.maniya/Documents/Projects/pkg-pdf-generator/node_modules/@foliojs-fork/fontkit';
+var __dirname$1 = '/Users/priyank.maniya/Documents/Projects/Phoenix/pkg-pdf-generator/node_modules/@foliojs-fork/fontkit';
 
 var restructure = {};
 
@@ -81115,7 +81117,7 @@ function requireFontkit () {
 var fontkitExports = requireFontkit();
 var fontkit = /*@__PURE__*/getDefaultExportFromCjs(fontkitExports);
 
-var __dirname = '/Users/priyank.maniya/Documents/Projects/pkg-pdf-generator/node_modules/@foliojs-fork/linebreak/src';
+var __dirname = '/Users/priyank.maniya/Documents/Projects/Phoenix/pkg-pdf-generator/node_modules/@foliojs-fork/linebreak/src';
 
 var classes = {};
 
@@ -139509,38 +139511,6 @@ const getValueFromPath = (obj, path) => {
   );
   return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
-function findAndSetKeyInObject(obj, keyToFind, newValue, searchInPrivate = false) {
-  let result = null;
-  let mainKey = keyToFind;
-  let property = null;
-
-  // Handle string paths
-  {
-    [mainKey, property] = keyToFind.split(".");
-  }
-
-  function recursiveSearch(obj) {
-    if (obj && typeof obj === "object") {
-      if (obj.hasOwnProperty(mainKey)) {
-        // If we have a property to access, get that instead
-        result = property ? obj[mainKey][property] : obj[mainKey];
-        return;
-      }
-      for (const key in obj) {
-        // Skip _private_ keys if searchInPrivate is false
-        if (!searchInPrivate && key.startsWith("_private_")) {
-          continue;
-        }
-        if (typeof obj[key] === "object") {
-          recursiveSearch(obj[key]);
-        }
-      }
-    }
-  }
-
-  recursiveSearch(obj);
-  return result;
-}
 
 const base64ToFile = (base64, fileName, contentType = "") => {
   const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
@@ -139688,13 +139658,7 @@ const pdfBase64 = async (layout, data) => {
   if (Array.isArray(layout.additionalContent)) {
     for (const content of layout.additionalContent) {
       if (content.type === MERGE_TYPE.CONDITIONAL) {
-        let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
-        if (val === false || val === null) {
-          // Skipping mergePDFs
-          continue;
-        }
         const pdfAttachments = getValueFromPath(data, content.value);
-
 
         if (pdfAttachments?.length > 0) {
           try {

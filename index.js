@@ -19,7 +19,12 @@ const getValueFromPath = (obj, path) => {
   );
   return Array.isArray(result) ? result : result !== undefined ? [result] : [];
 };
-function findAndSetKeyInObject(obj, keyToFind, newValue, searchInPrivate = false) {
+function findAndSetKeyInObject(
+  obj,
+  keyToFind,
+  newValue,
+  searchInPrivate = false
+) {
   let result = null;
   let mainKey = keyToFind;
   let property = null;
@@ -201,13 +206,7 @@ const pdfBase64 = async (layout, data) => {
   if (Array.isArray(layout.additionalContent)) {
     for (const content of layout.additionalContent) {
       if (content.type === MERGE_TYPE.CONDITIONAL) {
-        let val = findAndSetKeyInObject(data, "add_attachments_to_pdf");
-        if (val === false || val === null) {
-          // Skipping mergePDFs
-          continue;
-        }
         const pdfAttachments = getValueFromPath(data, content.value);
-
 
         if (pdfAttachments?.length > 0) {
           try {

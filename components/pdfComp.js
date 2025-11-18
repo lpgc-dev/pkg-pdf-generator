@@ -563,10 +563,14 @@ const object = (
 // Function to get a nested value from an object based on a path
 function getValueFromPath(obj, path) {
   // Use reduce to traverse the object and get the value at the specified path
-  const result = path.reduce(
+  let result = path.reduce(
     (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
     obj
   );
+  // if the result is a string and does not contain "base64", then remove the html tags and whitespace
+  if (typeof result === "string" && !result.slice(0, 50).includes("base64")) {
+    result = result.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  }
   return result === null || result === undefined ? "" : result;
 }
 
@@ -697,9 +701,7 @@ const tableObject = (layout, data, staticData) => {
 
       // When rowData exists, iterate over rowData and use layout.body.rows as template
       for (const row of rowData) {
-        // console.log("row", row, layout.body.rows);
         for (const _row of layout.body.rows) {
-          // console.log("_row", _row);
           // When rowData exists, layout.body.rows contains individual cell objects
           // We need to create a table row from these cell objects
           const tableRow = _row.map((cell, index) => {

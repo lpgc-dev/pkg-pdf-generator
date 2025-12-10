@@ -4138,22 +4138,20 @@ const generateSignatureTable = (content, data) => {
   const tableBody = [];
   let currentRow = [];
 
+  const titleTextObj = {
+    text: content.title ?? "Signatures", // Default title if not provided
+    alignment: "center",
+    bold: true,
+    margin: [0, 2, 0, 2],
+  };
+
   // Title with a border (no bottom border)
   const titleWithBorder = {
     table: {
       dontBreakRows: true, // Keep title & table content from splitting row by row
       headerRows: 0,
       widths: ["*"], // Full width
-      body: [
-        [
-          {
-            text: content.title ?? "Signatures", // Default title if not provided
-            alignment: "center",
-            bold: true,
-            margin: [0, 2, 0, 2],
-          },
-        ],
-      ],
+      body: [[titleTextObj]],
     },
     layout: {
       hLineWidth: (i) => (i === 0 ? 1 : 0), // Top horizontal line only
@@ -4218,33 +4216,44 @@ const generateSignatureTable = (content, data) => {
 
     // Build the cell
     const signatureCell = {
-      stack: [
-        {
-          svg: signatureData,
-          width: 100,
-          height: 30,
-          alignment: "center",
-        },
-        {
-          text: displayName,
-          alignment: "center",
-          margin: [0, 5, 0, 0],
-          fontSize: 11,
-          color: "#545454",
-        },
-        // If attendeeType is enabled and there's a non-null value, show it
-        ...(isAttendeeTypeEnabled && attendeeTypeValue
-          ? [
-              {
-                text: attendeeTypeValue,
-                alignment: "center",
-                margin: [0, 2, 0, 0],
-                fontSize: 10,
-                color: "grey",
-              },
-            ]
-          : []),
-      ],
+      layout: "noBorders",
+      table: {
+        headerRows: 0,
+        dontBreakRows: true,
+        headerRows: 0,
+        widths: ["*"],
+        body: [
+          [
+            {
+              svg: signatureData,
+              width: 100,
+              height: 50,
+              alignment: "center",
+            },
+          ],
+          [
+            {
+              text: displayName,
+              alignment: "center",
+              margin: [0, 2, 0, 0],
+              fontSize: 11,
+              color: "#545454",
+            },
+          ],
+          // If attendeeType is enabled and there's a non-null value, show it
+          [
+            isAttendeeTypeEnabled && attendeeTypeValue
+              ? {
+                  text: attendeeTypeValue,
+                  alignment: "center",
+                  margin: [0, 2, 0, 0],
+                  fontSize: 10,
+                  color: "grey",
+                }
+              : null,
+          ],
+        ],
+      },
       margin: [0, 0, 0, 0],
     };
 
@@ -4258,48 +4267,65 @@ const generateSignatureTable = (content, data) => {
     }
   });
 
-  // Handle cases with one remaining row
-  if (currentRow.length === 1 && tableBody.length === 0) {
-    // Only one signature, center it on the page
+
+  // Handle the case for the first and only row (single row case)
+  if (currentRow.length < itemsPerRow && tableBody.length === 0) {
+    const _body = [];
+    _body.unshift([
+      {
+        ...titleTextObj,
+        colSpan: currentRow.length,
+      },
+      ...Array(currentRow.length - 1).fill({}),
+    ]);
+    _body.push(currentRow);
+
     return {
-      unbreakable: true, // Keep entire block together
-      stack: [
-        titleWithBorder,
-        {
-          table: {
-            widths: ["*"], // Single column width
-            body: [currentRow],
-            headerRows: 0,
-            keepWithHeaderRows: 1,
-            dontBreakRows: false,
-          },
-        },
-      ],
+      table: {
+        widths: Array(currentRow.length).fill("*"),
+        body: _body,
+        headerRows: 1,
+        keepWithHeaderRows: 1,
+        dontBreakRows: true,
+      },
     };
   } else if (currentRow.length > 0) {
     // Fill remaining cells for incomplete rows
-    while (currentRow.length < itemsPerRow) {
-      currentRow.push({ text: "" }); // Add placeholders
+    // Fill the last cell with appropriate colSpan, add placeholders for the rest
+    if (currentRow.length < itemsPerRow) {
+      // Set colSpan on the last real cell to fill the row
+      currentRow[currentRow.length - 1] = {
+        ...currentRow[currentRow.length - 1],
+        colSpan: itemsPerRow - currentRow.length + 1
+      };
+      // Add empty placeholder cells as needed (for pdfmake table structure)
+      for (let i = currentRow.length; i < itemsPerRow; i++) {
+        currentRow.push({});
+      }
     }
     tableBody.push(currentRow);
   }
 
-  // Build and return the full table
-  return {
-    // unbreakable attempts to keep the entire stack on one page
-    unbreakable: false,
-    stack: [
-      titleWithBorder,
+  if (rowData.length > 1) {
+    // Insert the header row at the start of tableBody, with colSpan and dynamic placeholders
+    tableBody.unshift([
       {
-        table: {
-          widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
-          body: tableBody,
-          headerRows: 0,
-          keepWithHeaderRows: 1,
-          dontBreakRows: true,
-        },
+        ...titleTextObj,
+        colSpan: itemsPerRow,
       },
-    ],
+      ...Array(itemsPerRow - 1).fill({}),
+    ]);
+  }
+
+  // return the table
+  return {
+    table: {
+      widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
+      body: tableBody,
+      headerRows: 1,
+      keepWithHeaderRows: 1,
+      dontBreakRows: true,
+    },
   };
 };
 
@@ -4419,7 +4445,12 @@ const object = (
         if (obj.visible && evaluateCondition(obj.visible, data) === false) {
           return null;
         }
-        const table = tableObject(obj, data, staticData);
+        const table = tableObject(
+          obj,
+          // if data is null or undefined, use jsonData
+          data == null || data == undefined ? jsonData : data,
+          staticData
+        );
         return table;
       } else {
         const checkObject2 = checkObject(obj.value);
@@ -4533,6 +4564,12 @@ const object = (
     if (layout.fit) qrContent.fit = layout.fit;
     return qrContent;
   }
+  if (layout.type == "signature") {
+    return generateSignatureTable(
+      layout,
+      data == null || data == undefined ? jsonData : data
+    );
+  }
 
   if (layout.type === "image") {
     // default
@@ -4611,7 +4648,10 @@ function getValueFromPath$1(obj, path) {
   );
   // if the result is a string and does not contain "base64", then remove the html tags and whitespace
   if (typeof result === "string" && !result.slice(0, 50).includes("base64")) {
-    result = result.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    result = result
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
   return result === null || result === undefined ? "" : result;
 }

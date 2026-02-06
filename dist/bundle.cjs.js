@@ -4136,57 +4136,91 @@ const generateSignatureTable = (content, data) => {
 
   // Check if the attendees exist and have valid data
   const rowData = getValueFromPath(data, content.rowData) || [];
-  const itemsPerRow = content.itemsPerRow || 2; // Default to 2 items per row
+  
+  // Support for minItemsPerRow and maxItemsPerRow
+  // maxItemsPerRow: Maximum items before wrapping to next row
+  // minItemsPerRow: Minimum columns per row (fill with empty cells if needed)
+  const maxItemsPerRow = content.maxItemsPerRow || content.minItemsPerRow || 2;
+  const minItemsPerRow = content.minItemsPerRow || maxItemsPerRow;
+  // The table column count is the larger of min and max (typically they're equal)
+  const columnsPerRow = Math.max(minItemsPerRow, maxItemsPerRow);
+  
+  // Whether to show the title header (default: true for backward compatibility)
+  const showTitle = content.showTitle !== false;
+  
+  // Gap between signature boxes (default: 3)
+  const boxGap = content.boxGap ?? 3;
+  
+  // Title margin (default: [0, 5, 0, 5] - bottom margin for spacing before signatures)
+  const titleMargin = content.titleMargin ?? [0, 5, 0, 5];
+  
   const tableBody = [];
   let currentRow = [];
 
-  const titleTextObj = {
-    text: content.title ?? "Signatures", // Default title if not provided
-    alignment: "center",
-    bold: true,
-    margin: [0, 2, 0, 2],
-  };
-
-  // Title with a border (no bottom border)
-  const titleWithBorder = {
-    table: {
-      dontBreakRows: true, // Keep title & table content from splitting row by row
-      headerRows: 0,
-      widths: ["*"], // Full width
-      body: [[titleTextObj]],
-    },
-    layout: {
-      hLineWidth: (i) => (i === 0 ? 1 : 0), // Top horizontal line only
-      vLineWidth: () => 1, // Vertical lines
-      hLineColor: () => "#000000", // Horizontal line color
-      vLineColor: () => "#000000", // Vertical line color
-    },
-  };
-
-  // If no attendees exist, return only the title with an empty table
-  if (!Array.isArray(rowData) || rowData.length === 0) {
-    return {
-      // unbreakable so the title & placeholder aren't split
-      unbreakable: true,
-      stack: [
-        titleWithBorder,
-        {
-          table: {
-            widths: Array(itemsPerRow).fill("*"), // Default column widths
-            body: [
-              [
-                {
-                  text: content.placeholder ?? "No signatures available",
-                  colSpan: itemsPerRow,
-                  alignment: "center",
-                },
-              ],
-            ],
-            headerRows: 0,
-            layout: "noBorders", // Optional: remove borders for the empty state
-          },
+  // Right margin to prevent overflow (same for title and signatures)
+  // Set to 0 since font size adjustments now prevent overflow
+  const overflowMargin = 0;
+  
+  // Title with divider line below
+  const titleBoxObj = {
+    stack: [
+      {
+        text: content.title ?? "Signatures",
+        alignment: "center",
+        bold: true,
+        margin: [0, 0, 0, 0],
+      },
+      // Divider line below title
+      {
+        table: {
+          widths: ["*"],
+          body: [[{ text: "" }]],
         },
-      ],
+        layout: {
+          hLineWidth: (i) => (i === 1 ? 0.5 : 0),
+          vLineWidth: () => 0,
+          hLineColor: () => "#cccccc",
+        },
+      },
+    ],
+    margin: [
+      titleMargin[0] || 0,
+      titleMargin[1] || 0,
+      Math.max(titleMargin[2] || 0, overflowMargin),
+      titleMargin[3] || 0,
+    ],
+  };
+
+  // Helper function to create an empty placeholder cell (invisible - no box)
+  const createEmptyCell = () => ({
+    text: "",
+  });
+
+  // Helper function to fill row to minimum columns with empty cells
+  const fillRowToMinColumns = (row) => {
+    const filledRow = [...row];
+    while (filledRow.length < columnsPerRow) {
+      filledRow.push(createEmptyCell());
+    }
+    return filledRow;
+  };
+
+  // If no attendees exist, return placeholder
+  if (!Array.isArray(rowData) || rowData.length === 0) {
+    const emptyContent = [];
+    
+    if (showTitle) {
+      emptyContent.push(titleBoxObj);
+    }
+    
+    emptyContent.push({
+      text: content.placeholder ?? "No signatures available",
+      alignment: "center",
+      margin: [0, 0, 0, 0],
+    });
+    
+    return {
+      stack: emptyContent,
     };
   }
 
@@ -4216,118 +4250,195 @@ const generateSignatureTable = (content, data) => {
       attendeeTypeValue = attendee.attendeeType || null;
     }
 
-    // Build the cell
-    const signatureCell = {
-      layout: "noBorders",
-      table: {
-        headerRows: 0,
-        dontBreakRows: true,
-        headerRows: 0,
-        widths: ["*"],
-        body: [
-          [
-            {
-              svg: signatureData,
-              width: 100,
-              height: 50,
-              alignment: "center",
-            },
-          ],
-          [
-            {
-              text: displayName,
-              alignment: "center",
-              margin: [0, 2, 0, 0],
-              fontSize: 11,
-              color: "#545454",
-            },
-          ],
-          // If attendeeType is enabled and there's a non-null value, show it
-          [
-            isAttendeeTypeEnabled && attendeeTypeValue
-              ? {
-                  text: attendeeTypeValue,
-                  alignment: "center",
-                  margin: [0, 2, 0, 0],
-                  fontSize: 10,
-                  color: "grey",
-                }
-              : null,
-          ],
-        ],
-      },
-      margin: [0, 0, 0, 0],
+    // Calculate font size based on name length to keep it on single line
+    // Reduce font size more aggressively for longer names to prevent overflow
+    const baseFontSize = 10.5;
+    const minFontSize = 8;
+    const maxNameLength = 15;
+    const nameFontSize = displayName.length > maxNameLength 
+      ? Math.max(minFontSize, baseFontSize - Math.floor((displayName.length - maxNameLength) / 3))
+      : baseFontSize;
+    console.log("NAME FONT SIZE ::", nameFontSize);
+
+    // Fixed heights for consistent box sizing
+    const signatureRowHeight = 50;
+    const nameRowHeight = 14;
+
+    // Calculate vertical centering margin for name
+    const nameVerticalMargin = Math.max(0, Math.floor((nameRowHeight - nameFontSize) / 2));
+
+    // Helper function to create SVG with rotated text (90 degrees counter-clockwise)
+    const createRotatedTextSvg = (text, height, fontSize = 8) => {
+      const svgWidth = 16; // Fixed width for the rotated text column
+      const centerX = svgWidth / 2;
+      const centerY = height / 2;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${height}" viewBox="0 0 ${svgWidth} ${height}">
+        <text x="${centerX}" y="${centerY}" 
+              transform="rotate(-90, ${centerX}, ${centerY})" 
+              font-size="${fontSize}" 
+              fill="#555555" 
+              text-anchor="middle" 
+              dominant-baseline="middle"
+              font-family="Helvetica, Arial, sans-serif">${text}</text>
+      </svg>`;
     };
+
+    // Build the signature cell based on whether attendeeType is enabled
+    let signatureCell;
+
+    if (isAttendeeTypeEnabled && attendeeTypeValue) {
+      // Layout: attendeeType on left of signature only, name spans full width at bottom
+      const rotatedSvg = createRotatedTextSvg(attendeeTypeValue, signatureRowHeight);
+
+      signatureCell = {
+        table: {
+          headerRows: 0,
+          dontBreakRows: true,
+          widths: [18, "*"], // Narrow left column for rotated text
+          body: [
+            [
+              // Left column: rotated attendeeType (only in signature row)
+              {
+                svg: rotatedSvg,
+                fit: [16, signatureRowHeight],
+                alignment: "center",
+              },
+              // Right column: signature (centered using fit with full row height)
+              {
+                svg: signatureData,
+                width: 100,
+                height: 50,
+                alignment: "center",
+                margin: [0, 2, 0, 2],
+              },
+            ],
+            [
+              // Name spans full width (colSpan: 2)
+              {
+                text: displayName,
+                alignment: "center",
+                fontSize: nameFontSize,
+                color: "#545454",
+                noWrap: true,
+                margin: [0, nameVerticalMargin, 0, 0],
+                colSpan: 2,
+              },
+              {}, // Empty cell for colSpan
+            ],
+          ],
+          heights: [signatureRowHeight, nameRowHeight],
+        },
+        // Each box has its own border - no vertical line between attendeeType and signature
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0),
+          hLineColor: () => "#000000",
+          vLineColor: () => "#000000",
+          paddingLeft: () => 1,
+          paddingRight: () => 1,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+        margin: [0, 0, 0, 0],
+      };
+    } else {
+      // Original layout: signature on top, name below (no attendeeType)
+      const cellBody = [
+        [
+          {
+            svg: signatureData,
+            width: 100,
+            height: 50,
+            alignment: "center",
+            margin: [0, 2, 0, 2],
+          },
+        ],
+        [
+          {
+            text: displayName,
+            alignment: "center",
+            fontSize: nameFontSize,
+            color: "#545454",
+            noWrap: true,
+            margin: [0, nameVerticalMargin, 0, 0],
+          },
+        ],
+      ];
+
+      signatureCell = {
+        table: {
+          headerRows: 0,
+          dontBreakRows: true,
+          widths: ["*"],
+          heights: [signatureRowHeight, nameRowHeight],
+          body: cellBody,
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => "#000000",
+          vLineColor: () => "#000000",
+          paddingLeft: () => 1,
+          paddingRight: () => 1,
+          paddingTop: () => 1,
+          paddingBottom: () => 1,
+        },
+        margin: [0, 0, 0, 0],
+      };
+    }
 
     // Add cell to current row
     currentRow.push(signatureCell);
 
-    // If the row reaches itemsPerRow, push it to the tableBody
-    if (currentRow.length === itemsPerRow) {
-      tableBody.push(currentRow);
+    // If the row reaches maxItemsPerRow, fill and push to tableBody
+    if (currentRow.length === maxItemsPerRow) {
+      tableBody.push(fillRowToMinColumns(currentRow));
       currentRow = []; // Reset row
     }
   });
 
+  // Handle remaining items in the last incomplete row
+  if (currentRow.length > 0) {
+    // Fill the remaining row to columnsPerRow with empty cells
+    tableBody.push(fillRowToMinColumns(currentRow));
+  }
 
-  // Handle the case for the first and only row (single row case)
-  if (currentRow.length < itemsPerRow && tableBody.length === 0) {
-    const _body = [];
-    _body.unshift([
-      {
-        ...titleTextObj,
-        colSpan: currentRow.length,
-      },
-      ...Array(currentRow.length - 1).fill({}),
-    ]);
-    _body.push(currentRow);
+  // Build the result stack
+  const resultStack = [];
 
-    return {
+  // Add title if enabled (in a bordered box)
+  if (showTitle) {
+    resultStack.push(titleBoxObj);
+  }
+
+  // Add the signatures table (outer table with no borders - boxes are standalone)
+  if (tableBody.length > 0) {
+    resultStack.push({
       table: {
-        widths: Array(currentRow.length).fill("*"),
-        body: _body,
-        headerRows: 1,
-        keepWithHeaderRows: 1,
+        widths: Array(columnsPerRow).fill("*"),
+        body: tableBody,
+        headerRows: 0,
         dontBreakRows: true,
       },
-    };
-  } else if (currentRow.length > 0) {
-    // Fill remaining cells for incomplete rows
-    // Fill the last cell with appropriate colSpan, add placeholders for the rest
-    if (currentRow.length < itemsPerRow) {
-      // Set colSpan on the last real cell to fill the row
-      currentRow[currentRow.length - 1] = {
-        ...currentRow[currentRow.length - 1],
-        colSpan: itemsPerRow - currentRow.length + 1
-      };
-      // Add empty placeholder cells as needed (for pdfmake table structure)
-      for (let i = currentRow.length; i < itemsPerRow; i++) {
-        currentRow.push({});
-      }
-    }
-    tableBody.push(currentRow);
-  }
-
-  if (rowData.length > 1) {
-    // Insert the header row at the start of tableBody, with colSpan and dynamic placeholders
-    tableBody.unshift([
-      {
-        ...titleTextObj,
-        colSpan: itemsPerRow,
+      // Outer table has no borders - use padding for gaps between cells
+      layout: {
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: (i) => (i === 0 ? 0 : boxGap / 2),
+        paddingRight: (i, node) => (i === node.table.widths.length - 1 ? 0 : boxGap / 2),
+        paddingTop: () => 0,
+        paddingBottom: () => boxGap,
       },
-      ...Array(itemsPerRow - 1).fill({}),
-    ]);
+      // Right margin to match title and prevent border overflow
+      margin: [0, 0, overflowMargin, 0],
+    });
   }
 
-  // return the table
   return {
-    table: {
-      widths: Array(itemsPerRow).fill("*"), // Ensure widths match columns
-      body: tableBody,
-      headerRows: 1,
-      keepWithHeaderRows: 1,
-      dontBreakRows: true,
-    },
+    stack: resultStack,
+    // Ensure the signature section stays within page bounds
+    margin: [0, 0, 0, 0],
+    width: "100%",
   };
 };
 
@@ -4526,6 +4637,7 @@ const object = (
           ...additionalProps,
         };
       } else if (item.type === "image") {
+        console.log("GOT IMAGE TYPE :", item);
         // default
         let imageContent = {
           image: item.value,
@@ -4574,6 +4686,7 @@ const object = (
   }
 
   if (layout.type === "image") {
+    console.log("GOT IMAGE TYPE ::", layout);
     // default
     let imageContent = {
       image: valueData,
@@ -4662,6 +4775,50 @@ function getValueFromPath$1(obj, path) {
 function checkObject(input) {
   return typeof input === "object" && input !== null && !Array.isArray(input);
 }
+
+// Build a horizontal divider for pdfmake.
+// Uses a 1-cell table with bottom border so it spans full width and thickness is reliable
+// (canvas line can have lineWidth ignored when lineColor is set in some pdfmake versions).
+// content: { margin?, lineWidth?, color?, useCanvas? } - all optional
+// useCanvas: true = use canvas line (fixed width); otherwise table-based (full width)
+const buildDivider = (content) => {
+  const lineWidth = content.lineWidth ?? 1;
+  const color = content.color ?? "black";
+  const margin = content.margin ?? [0, 0, 0, 0];
+
+  if (content.useCanvas === true) {
+    const width = content.width != null ? content.width : 1000;
+    return {
+      canvas: [
+        {
+          type: "line",
+          x1: 0,
+          y1: 0,
+          x2: width,
+          y2: 0,
+          lineWidth,
+          lineColor: color,
+        },
+      ],
+      margin,
+    };
+  }
+
+  // Table-based divider: full width, reliable line thickness (only bottom line drawn)
+  return {
+    table: {
+      widths: ["*"],
+      body: [[{ text: "" }]],
+    },
+    layout: {
+      hLineWidth: (i) => (i === 1 ? lineWidth : 0),
+      vLineWidth: () => 0,
+      hLineColor: () => color,
+      vLineColor: () => color,
+    },
+    margin,
+  };
+};
 
 // Function to create a table structure for the PDF
 const tableObject = (layout, data, staticData) => {
@@ -4770,6 +4927,8 @@ const tableObject = (layout, data, staticData) => {
 
     if (rowData !== null) {
       if (layout.ignoreEmpty?.enable && layout.ignoreEmpty?.value) {
+        console.log("IGNORE EMPTY ::", layout.ignoreEmpty);
+        console.log("LAYOUT ::", layout);
         rowData = rowData.filter(
           (row) =>
             !layout.ignoreEmpty.value.every((field) => {
@@ -4796,6 +4955,7 @@ const tableObject = (layout, data, staticData) => {
               cell.rowData !== undefined &&
               cell.rowData !== null
             ) {
+              console.log("CELL ::", cell);
               if (
                 cell.visible &&
                 evaluateCondition(cell.visible, data) === false
@@ -4803,6 +4963,12 @@ const tableObject = (layout, data, staticData) => {
                 return null;
               }
               return tableObject(cell, row, staticData);
+            } else if (cell.type === "divider") {
+              // Handle divider type in table cells with rowData
+              if (cell.visible && evaluateCondition(cell.visible, data) === false) {
+                return { text: "" };
+              }
+              return buildDivider(cell);
             } else {
               const isArray = Array.isArray(cell.value);
               if (isArray) {
@@ -4846,6 +5012,12 @@ const tableObject = (layout, data, staticData) => {
               return null;
             }
             return tableObject(cell, data, staticData);
+          } else if (cell.type === "divider") {
+            // Handle divider type in table cells
+            if (cell.visible && evaluateCondition(cell.visible, data) === false) {
+              return { text: "" };
+            }
+            return buildDivider(cell);
           } else {
             return object(cell, null, staticData, false, data);
           }
@@ -4877,7 +5049,17 @@ const tableObject = (layout, data, staticData) => {
 
   let tempTable = { table: table };
   if (layout.layout) {
-    if (layout.layout === "outside") {
+    if (layout.layout === "noBorders") {
+      // pdfmake merges named layouts with defaultLayout. Override with explicit noBorders + normal cell padding.
+      tempTable.layout = {
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      };
+    } else if (layout.layout === "outside") {
       tempTable.layout = {
         hLineWidth: function (i, node) {
           return i === 0 || i === node.table.body.length ? 1 : 0;
@@ -4892,16 +5074,16 @@ const tableObject = (layout, data, staticData) => {
           return "black";
         },
         paddingLeft: function (i, node) {
-          return 4;
+          return 0;
         },
         paddingRight: function (i, node) {
-          return 4;
+          return 0;
         },
         paddingTop: function (i, node) {
-          return 2;
+          return 0;
         },
         paddingBottom: function (i, node) {
-          return 2;
+          return 0;
         },
       };
     } else if (layout.layout === "onlyVerticalLinesWithClosedBorders") {
@@ -4934,14 +5116,14 @@ const tableObject = (layout, data, staticData) => {
           return 0;
         },
         paddingRight: function (i, node) {
-          return 4;
+          return 0;
         },
         paddingTop: function (i, node) {
-          return 2;
+          return 0;
         },
         paddingBottom: (i, node) => {
           // This function determines the bottom padding for each row in the table
-          const DEFAULT_PADDING = 2;
+          const DEFAULT_PADDING = 0;
 
           // For the last row in the table
           if (i === node.table.body.length - 1) {
@@ -4972,7 +5154,13 @@ const tableObject = (layout, data, staticData) => {
       tempTable.layout = layout.layout;
     }
   }
-  if (layout.margin) tempTable.margin = layout.margin;
+  // Apply table-level margin [left, top, right, bottom] for spacing above/below the table
+  if (
+    Array.isArray(layout.margin) &&
+    layout.margin.length >= 4
+  ) {
+    tempTable.margin = layout.margin;
+  }
   // Add any additional properties from layout that haven't been handled
   const handledProps = [
     "type",
@@ -4997,16 +5185,40 @@ const tableObject = (layout, data, staticData) => {
   return tempTable;
 };
 
+/** True if table has one row, one cell, and that cell is only empty text (e.g. conditional content that didn't render). */
+const isTableEffectivelyEmpty = (tableDef) => {
+  const t = tableDef?.table;
+  if (!t?.body || t.body.length !== 1) return false;
+  const row = t.body[0];
+  if (!row?.length || row.length !== 1) return false;
+  const cell = row[0];
+  if (!cell) return true;
+  const text = cell.text;
+  const isEmptyText =
+    text === "" ||
+    text === undefined ||
+    (typeof text === "string" && text.trim() === "");
+  const hasOtherContent =
+    cell.table ||
+    cell.stack ||
+    (Array.isArray(cell.columns) && cell.columns.length > 0) ||
+    cell.image ||
+    cell.canvas;
+  return isEmptyText && !hasOtherContent;
+};
+
 const pdfDefinition = (layout, data) => {
   try {
     //temp remove fonts
-
+    console.log("LAYOUT SETTING ::", layout.setting);
     // Initialize document definition with styles
     let docDefinition = {
       styles: {
+        ...layout.styles,
         normalText: {
-          fontSize: 12, // Set default font size
-          margin: [0, 5, 0, 5], // Set default margin for text
+          fontSize: layout.setting.fontSize || 12, // Use fontSize from layout.setting, default to 12
+          margin: layout.setting.fontMargin ?? [0, 0, 0, 0], // No default vertical space; set setting.fontMargin (e.g. [0,5,0,5]) to add spacing
+          ...(layout.styles && layout.styles.normalText ? layout.styles.normalText : {})
         },
       },
       pageOrientation: layout.setting.orientation ?? "portrait", // Set page orientation, default to portrait
@@ -5014,15 +5226,7 @@ const pdfDefinition = (layout, data) => {
       pageMargins: layout.setting.margin ?? [20, 60, 40, 60], // Set page margins, default values
     };
 
-    // Merge additional styles from layout
-    const updatedStyles = {
-      ...layout.styles,
-      normalText: {
-        fontSize: 12,
-        margin: [0, 5, 0, 5],
-      },
-    };
-    docDefinition.styles = updatedStyles; // Apply updated styles
+    console.log("DOC DEFINITION ::", docDefinition);
 
     // Handle document header if specified in layout
     if (layout.header) {
@@ -5048,10 +5252,9 @@ const pdfDefinition = (layout, data) => {
             }
 
           const table = tableObject(content, data, layout.static);
+          console.log("TABLE ::", table);
 
-          //docDefinition.content.push(tableObject(content, data, layout.static)); // Add table content
-          if (table) {
-            // Only add non-null tables
+          if (table && !isTableEffectivelyEmpty(table)) {
             docDefinition.content.push(table);
           }
         } else if (content.type === "columns") {
@@ -5095,6 +5298,18 @@ const pdfDefinition = (layout, data) => {
         } else if (content.type === "array") {
           const arrayData = processArray(content, data, layout);
           docDefinition.content.push(arrayData);
+        } else if (content.type === "divider") {
+          console.log("DIVIDER ::", content);
+          if (content.visible && evaluateCondition(content.visible, data) === false) {
+            continue;
+          }
+          const divider = buildDivider(content);
+          if (divider) {
+            docDefinition.content.push(divider);
+          }
+        } else {
+          console.error("GOT UNKNOWN CONTENT TYPE ::", content.type, content);
+          throw new Error(`Unknown content type: ${content.type}`);
         }
       }
     }
@@ -99626,6 +99841,7 @@ pdfMakePrinter.vfs = roboto;
 
 const genFrontPdf = async (layout, data) => {
   const pdfDef = pdfDefinition(layout, data);
+  console.log("PDF DEF ::", pdfDef);
   return new Promise((resolve, reject) => {
     pdfMakePrinter.createPdf(pdfDef).getBase64((base64) => {
       const base64WithMimeType = `data:application/pdf;base64,${base64}`;

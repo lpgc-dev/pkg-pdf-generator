@@ -194,6 +194,16 @@
         }
       },
       {
+        "type": "divider",
+        "margin": [0, 16, 0, 16]
+      },
+      {
+        "type": "divider",
+        "lineWidth": 2,
+        "color": "#cccccc",
+        "margin": [20, 12, 20, 12]
+      },
+      {
         "type": "table",
         "data": "static",
         "margin": [20, 60, 40, 60],

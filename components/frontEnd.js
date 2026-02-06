@@ -5,6 +5,7 @@ pdfMake.vfs = roboto;
 
 const genFrontPdf = async (layout, data) => {
   const pdfDef = pdfDefinition(layout, data);
+  console.log("PDF DEF ::", pdfDef);
   return new Promise((resolve, reject) => {
     pdfMake.createPdf(pdfDef).getBase64((base64) => {
       const base64WithMimeType = `data:application/pdf;base64,${base64}`;

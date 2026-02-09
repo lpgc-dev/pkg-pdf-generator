@@ -170,9 +170,17 @@ const mergePDFs = async (pdfBase64Data, pdfAttachments, isBrowserEnv) => {
     await merger.add(mainPdfBuffer);
 
     for (const attachment of pdfAttachments) {
+      if (!attachment) continue;
+
       if (attachment.url) {
         const attachmentBuffer = await getNetworkAttachment(attachment.url);
         if (attachmentBuffer) await merger.add(attachmentBuffer);
+      } else if (attachment.value && attachment.type === "application/pdf") {
+        const base64Raw = attachment.value.includes(",")
+          ? attachment.value.split(",")[1]
+          : attachment.value;
+        const attachmentBuffer = Buffer.from(base64Raw, "base64");
+        if (attachmentBuffer.length > 0) await merger.add(attachmentBuffer);
       }
     }
 

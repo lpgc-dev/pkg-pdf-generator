@@ -440,29 +440,33 @@ const createSimpleSignatureCell = (signatureData, displayName, config) => {
 };
 
 /**
- * Creates a title box with divider for signature section
+ * Creates a title box with optional divider for signature section
  */
-const createTitleBox = (title, titleMargin, overflowMargin) => {
+const createTitleBox = (title, titleMargin, overflowMargin, showDivider = false, titleFontSize = 12) => {
+  const stackContent = [
+    {
+      text: title,
+      alignment: "center",
+      bold: true,
+      margin: [0, 0, 0, 0],
+      fontSize: titleFontSize,
+    },
+  ];
+  if (showDivider) {
+    stackContent.push({
+      table: {
+        widths: ["*"],
+        body: [[{ text: "" }]],
+      },
+      layout: {
+        hLineWidth: (i) => (i === 1 ? 0.5 : 0),
+        vLineWidth: () => 0,
+        hLineColor: () => "#cccccc",
+      },
+    });
+  }
   return {
-    stack: [
-      {
-        text: title,
-        alignment: "center",
-        bold: true,
-        margin: [0, 0, 0, 0],
-      },
-      {
-        table: {
-          widths: ["*"],
-          body: [[{ text: "" }]],
-        },
-        layout: {
-          hLineWidth: (i) => (i === 1 ? 0.5 : 0),
-          vLineWidth: () => 0,
-          hLineColor: () => "#cccccc",
-        },
-      },
-    ],
+    stack: stackContent,
     margin: [
       titleMargin[0] || 0,
       titleMargin[1] || 0,
@@ -483,14 +487,18 @@ const generateSignatureTable = (content, data) => {
   const minItemsPerRow = content.minItemsPerRow || maxItemsPerRow;
   const columnsPerRow = Math.max(minItemsPerRow, maxItemsPerRow);
   const showTitle = content.showTitle !== false;
+  const titleFontSize = content.titleFontSize ?? 12;
   const boxGap = content.boxGap ?? 3;
   const titleMargin = content.titleMargin ?? [0, 5, 0, 5];
   const overflowMargin = 0;
 
+  const showTitleDivider = content.showTitleDivider === true;
   const titleBoxObj = createTitleBox(
     content.title ?? "Signatures",
     titleMargin,
-    overflowMargin
+    overflowMargin,
+    showTitleDivider,
+    titleFontSize
   );
 
   // Helper to create empty placeholder cell
@@ -541,8 +549,6 @@ const generateSignatureTable = (content, data) => {
 
     const nameFontSize = calculateNameFontSize(displayName);
     const nameVerticalMargin = Math.max(0, Math.floor((nameRowHeight - nameFontSize) / 2));
-
-    console.log("NAME FONT SIZE ::", nameFontSize);
 
     const cellConfig = {
       signatureRowHeight,
@@ -703,7 +709,6 @@ const processStackContent = (layout, data, staticData, jsonData) => {
     }
 
     if (item.type === "image") {
-      console.log("GOT IMAGE TYPE :", item);
       const imageProps = extractAdditionalProps(item, ["value", "type"]);
       return {
         image: item.value,
@@ -741,7 +746,6 @@ const processQrContent = (layout, valueData) => {
  * Processes an image type content
  */
 const processImageContent = (layout, valueData) => {
-  console.log("GOT IMAGE TYPE ::", layout);
   const imageProps = extractAdditionalProps(layout, ["value", "type"]);
   return {
     image: valueData,
@@ -1006,7 +1010,6 @@ const processTableHeader = (layout, data, staticData, maxColumns) => {
  */
 const processTableCell = (cell, rowData, data, staticData, hasRowData) => {
   if (cell.type === "table" && hasRowData && cell.rowData != null) {
-    console.log("CELL ::", cell);
     if (cell.visible && evaluateCondition(cell.visible, data) === false) {
       return null;
     }
@@ -1076,8 +1079,6 @@ const tableObject = (layout, data, staticData) => {
 
   // Filter empty rows if configured
   if (rowData !== null && layout.ignoreEmpty?.enable && layout.ignoreEmpty?.value) {
-    console.log("IGNORE EMPTY ::", layout.ignoreEmpty);
-    console.log("LAYOUT ::", layout);
     rowData = rowData.filter(
       (row) =>
         !layout.ignoreEmpty.value.every((field) => {
@@ -1302,15 +1303,20 @@ const createFooterDivider = () => ({
  */
 const pdfDefinition = (layout, data) => {
   try {
-    console.log("LAYOUT SETTING ::", layout.setting);
-
     // Initialize document definition
+    const defaultFontSize = layout.setting.fontSize || 12;
+    const defaultFontMargin = layout.setting.fontMargin ?? [0, 0, 0, 0];
+
     const docDefinition = {
+      defaultStyle: {
+        fontSize: defaultFontSize,
+        margin: defaultFontMargin,
+      },
       styles: {
         ...layout.styles,
         normalText: {
-          fontSize: layout.setting.fontSize || 12,
-          margin: layout.setting.fontMargin ?? [0, 0, 0, 0],
+          fontSize: defaultFontSize,
+          margin: defaultFontMargin,
           ...(layout.styles?.normalText || {}),
         },
       },
@@ -1319,8 +1325,6 @@ const pdfDefinition = (layout, data) => {
       pageMargins: layout.setting.margin ?? [20, 60, 40, 60],
       content: [],
     };
-
-    console.log("DOC DEFINITION ::", docDefinition);
 
     // Process header
     if (layout.header) {
@@ -1371,7 +1375,6 @@ const processBodyContent = (content, data, layout) => {
   switch (content.type) {
     case "table": {
       const table = tableObject(content, data, layout.static);
-      console.log("TABLE ::", table);
       return table && !isTableEffectivelyEmpty(table) ? table : null;
     }
 
@@ -1406,7 +1409,6 @@ const processBodyContent = (content, data, layout) => {
       return processArray(content, data, layout);
 
     case "divider": {
-      console.log("DIVIDER ::", content);
       return buildDivider(content);
     }
 

@@ -4621,41 +4621,19 @@ const buildDivider = (content) => {
   const color = content.color ?? "black";
   const margin = content.margin ?? [0, 0, 0, 0];
 
-  if (content.useCanvas === true) {
-    const width = content.width != null ? content.width : 1000;
-    return {
-      canvas: [
-        {
-          type: "line",
-          x1: 0,
-          y1: 0,
-          x2: width,
-          y2: 0,
-          lineWidth,
-          lineColor: color,
-        },
-      ],
-      margin,
-    };
-  }
-
-  // Table-based divider: full width, reliable line thickness
-  // Explicit zero padding so production build matches dev (pdfmake default padding varies by environment)
+  const width = content.width != null ? content.width : 752;
   return {
-    table: {
-      widths: ["*"],
-      body: [[{ text: "" }]],
-    },
-    layout: {
-      hLineWidth: (i) => (i === 1 ? lineWidth : 0),
-      vLineWidth: () => 0,
-      hLineColor: () => color,
-      vLineColor: () => color,
-      paddingLeft: () => 0,
-      paddingRight: () => 0,
-      paddingTop: () => 0,
-      paddingBottom: () => 0,
-    },
+    canvas: [
+      {
+        type: "line",
+        x1: 0,
+        y1: 0,
+        x2: width,
+        y2: 0,
+        lineWidth,
+        lineColor: color,
+      },
+    ],
     margin,
   };
 };

@@ -4642,6 +4642,7 @@ const buildDivider = (content) => {
   }
 
   // Table-based divider: full width, reliable line thickness
+  // Explicit zero padding so production build matches dev (pdfmake default padding varies by environment)
   return {
     table: {
       widths: ["*"],
@@ -4652,6 +4653,10 @@ const buildDivider = (content) => {
       vLineWidth: () => 0,
       hLineColor: () => color,
       vLineColor: () => color,
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
     },
     margin,
   };

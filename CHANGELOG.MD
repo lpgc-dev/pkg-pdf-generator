@@ -31,3 +31,16 @@ Updated way how it was creating divider from table to the canvas to keep consist
 
 - [PHO-997](https://lgc-devops.atlassian.net/browse/PHO-997)
   It adds extra space when adding divider in prod build, fixed by updating function
+
+## [1.0.3] - 2025-02-10
+
+Updated way how it was creating divider from table to the canvas to keep consistency
+
+### Added
+
+### Changed
+
+### Fixed
+
+- [PHO-996](https://lgc-devops.atlassian.net/browse/PHO-996)
+  Updated logic to consider the jsonData if data is empty

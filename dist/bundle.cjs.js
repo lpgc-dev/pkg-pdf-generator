@@ -4798,8 +4798,8 @@ const object = (
   tableSingleRowData = null,
   ignorePrefixAndSuffix = false
 ) => {
-  // Check visibility condition
-  if (layout.visible && evaluateCondition(layout.visible, data) === false) {
+  // Check visibility condition, pass jsonData if data doesn't exists
+  if (layout.visible && evaluateCondition(layout.visible, data || jsonData) === false) {
     return { text: "" };
   }
 

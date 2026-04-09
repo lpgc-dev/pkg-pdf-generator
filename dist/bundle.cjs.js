@@ -4084,15 +4084,18 @@ const evaluateCondition = (conditionString, data) => {
     return true;
   }
 
-  // Create sanitized version of data object
+  // Object.entries(null) throws; nested table cells call object() with data=null
+  // while conditions still reference form fields — only objects carry bindable keys.
+  const context =
+    data != null && typeof data === "object" ? data : {};
+
   const sanitizedData = {};
-  Object.entries(data).forEach(([key, value]) => {
+  Object.entries(context).forEach(([key, value]) => {
     sanitizedData[sanitizeKey(key)] = value;
   });
 
-  // Sanitize condition string to use sanitized keys
   let sanitizedCondition = conditionString;
-  Object.keys(data).forEach((key) => {
+  Object.keys(context).forEach((key) => {
     const sanitizedKeyName = sanitizeKey(key);
     if (key !== sanitizedKeyName) {
       sanitizedCondition = sanitizedCondition.replace(
@@ -4109,7 +4112,8 @@ const evaluateCondition = (conditionString, data) => {
     )(...Object.values(sanitizedData));
   } catch (error) {
     console.error("Error evaluating condition:", error);
-    return false;
+    // Fail open so PDF generation continues (visibility is best-effort)
+    return true;
   }
 };
 
@@ -4798,8 +4802,12 @@ const object = (
   tableSingleRowData = null,
   ignorePrefixAndSuffix = false
 ) => {
-  // Check visibility condition, pass jsonData if data doesn't exists
-  if (layout.visible && evaluateCondition(layout.visible, data || jsonData) === false) {
+  // Use jsonData when cell data is null (nested tables); ?? avoids skipping 0/false
+  const visibilityContext = data ?? jsonData;
+  if (
+    layout.visible &&
+    evaluateCondition(layout.visible, visibilityContext) === false
+  ) {
     return { text: "" };
   }
 
@@ -4884,7 +4892,7 @@ const object = (
       if (conditionResult.type === "table") {
         if (
           conditionResult.visible &&
-          evaluateCondition(conditionResult.visible, data) === false
+          evaluateCondition(conditionResult.visible, data ?? jsonData) === false
         ) {
           return null;
         }

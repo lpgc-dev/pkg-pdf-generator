@@ -484,7 +484,15 @@ const createTitleBox = (title, titleMargin, overflowMargin, showDivider = false,
  * Generates a signature table from layout and data
  */
 const generateSignatureTable = (content, data) => {
-  const rowData = getValueFromPath(data, content.rowData) || [];
+  const rowDataRaw = getValueFromPath(data, content.rowData);
+  // Allow `rowData` to point to either:
+  // - an array of attendee objects (existing behavior), OR
+  // - a single attendee object (new behavior; we wrap it)
+  const rowData = Array.isArray(rowDataRaw)
+    ? rowDataRaw
+    : rowDataRaw && typeof rowDataRaw === "object"
+      ? [rowDataRaw]
+      : [];
 
   // Configuration
   const maxItemsPerRow = content.maxItemsPerRow || content.minItemsPerRow || 2;
@@ -538,6 +546,43 @@ const generateSignatureTable = (content, data) => {
   const signatureRowHeight = 50;
   const nameRowHeight = 14;
 
+  const resolveMaybePath = (baseObj, maybePath) => {
+    if (maybePath == null) return "";
+    if (Array.isArray(maybePath)) {
+      const fromRow = getValueFromPath(baseObj, maybePath);
+      if (fromRow != null && fromRow !== "") return fromRow;
+      const fromRoot = getValueFromPath(data, maybePath);
+      return fromRoot ?? "";
+    }
+    return maybePath;
+  };
+
+  const resolveDisplayName = (attendee) => {
+    // Back-compat: `displayNames: ["attendeeName"]`
+    if (Array.isArray(content.displayNames)) {
+      return getValueFromPath(attendee, content.displayNames) || "Unknown";
+    }
+
+    // New: object config with optional fixed/dynamic prefix/suffix
+    // Example:
+    // displayNames: { path: ["attendeeName"], prefix: "Supervisor: ", suffix: "" }
+    // prefix/suffix may be string or a path array (resolved from attendee first, then root formData)
+    const cfg = content.displayNames;
+    if (cfg && typeof cfg === "object") {
+      const rawName =
+        resolveMaybePath(attendee, cfg.path ?? cfg.value ?? cfg.name) ||
+        "Unknown";
+      const prefix = resolveMaybePath(attendee, cfg.prefix);
+      const suffix = resolveMaybePath(attendee, cfg.suffix);
+      return `${prefix || ""}${rawName}${suffix || ""}`;
+    }
+
+    // Fallback: string literal (rare, but safe)
+    if (typeof content.displayNames === "string") return content.displayNames;
+
+    return "Unknown";
+  };
+
   // Process each attendee
   rowData.forEach((attendee) => {
     let signatureData = getValueFromPath(attendee, content.signature) || "";
@@ -547,7 +592,7 @@ const generateSignatureTable = (content, data) => {
       signatureData = createInvalidSvgPlaceholder();
     }
 
-    const displayName = getValueFromPath(attendee, content.displayNames) || "Unknown";
+    const displayName = resolveDisplayName(attendee);
     const isAttendeeTypeEnabled = !!content.attendeeType;
     const attendeeTypeValue = isAttendeeTypeEnabled ? attendee.attendeeType || null : null;
 
@@ -1369,9 +1414,23 @@ const processBodyContent = (content, data, layout) => {
       return table && !isTableEffectivelyEmpty(table) ? table : null;
     }
 
+    // Allow simple text blocks at body content level.
+    // This is additive: existing templates mostly render text via tables/stacks.
+    case "text": {
+      return object(content, data, layout.static, true, data);
+    }
+
     case "columns": {
       const columns = [];
-      for (const column of content.contents) {
+      // Support both historical `contents` and the more common pdfmake-style `columns`.
+      // Additive: existing templates using `contents` keep working.
+      const columnItems = Array.isArray(content.contents)
+        ? content.contents
+        : Array.isArray(content.columns)
+          ? content.columns
+          : [];
+
+      for (const column of columnItems) {
         if (column.visible && evaluateCondition(column.visible, data) === false) {
           continue;
         }
@@ -1380,7 +1439,15 @@ const processBodyContent = (content, data, layout) => {
           const table = tableObject(column, data, layout.static, true, data);
           if (table) columns.push(table);
         } else if (column.type === "signature") {
-          columns.push(generateSignatureTable(column, data));
+          const sig = generateSignatureTable(column, data);
+          // Signature blocks default to `width: "100%"` for standalone rendering.
+          // Inside a `columns` layout this can overflow, so we drop that default.
+          if (sig && sig.width === "100%") {
+            const { width, ...rest } = sig;
+            columns.push(rest);
+          } else {
+            columns.push(sig);
+          }
         } else {
           columns.push(object(column, data, layout.static, true, data));
         }

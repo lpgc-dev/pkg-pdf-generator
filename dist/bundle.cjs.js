@@ -4485,7 +4485,15 @@ const createTitleBox = (title, titleMargin, overflowMargin, showDivider = false,
  * Generates a signature table from layout and data
  */
 const generateSignatureTable = (content, data) => {
-  const rowData = getValueFromPath$1(data, content.rowData) || [];
+  const rowDataRaw = getValueFromPath$1(data, content.rowData);
+  // Allow `rowData` to point to either:
+  // - an array of attendee objects (existing behavior), OR
+  // - a single attendee object (new behavior; we wrap it)
+  const rowData = Array.isArray(rowDataRaw)
+    ? rowDataRaw
+    : rowDataRaw && typeof rowDataRaw === "object"
+      ? [rowDataRaw]
+      : [];
 
   // Configuration
   const maxItemsPerRow = content.maxItemsPerRow || content.minItemsPerRow || 2;
@@ -4539,6 +4547,43 @@ const generateSignatureTable = (content, data) => {
   const signatureRowHeight = 50;
   const nameRowHeight = 14;
 
+  const resolveMaybePath = (baseObj, maybePath) => {
+    if (maybePath == null) return "";
+    if (Array.isArray(maybePath)) {
+      const fromRow = getValueFromPath$1(baseObj, maybePath);
+      if (fromRow != null && fromRow !== "") return fromRow;
+      const fromRoot = getValueFromPath$1(data, maybePath);
+      return fromRoot ?? "";
+    }
+    return maybePath;
+  };
+
+  const resolveDisplayName = (attendee) => {
+    // Back-compat: `displayNames: ["attendeeName"]`
+    if (Array.isArray(content.displayNames)) {
+      return getValueFromPath$1(attendee, content.displayNames) || "Unknown";
+    }
+
+    // New: object config with optional fixed/dynamic prefix/suffix
+    // Example:
+    // displayNames: { path: ["attendeeName"], prefix: "Supervisor: ", suffix: "" }
+    // prefix/suffix may be string or a path array (resolved from attendee first, then root formData)
+    const cfg = content.displayNames;
+    if (cfg && typeof cfg === "object") {
+      const rawName =
+        resolveMaybePath(attendee, cfg.path ?? cfg.value ?? cfg.name) ||
+        "Unknown";
+      const prefix = resolveMaybePath(attendee, cfg.prefix);
+      const suffix = resolveMaybePath(attendee, cfg.suffix);
+      return `${prefix || ""}${rawName}${suffix || ""}`;
+    }
+
+    // Fallback: string literal (rare, but safe)
+    if (typeof content.displayNames === "string") return content.displayNames;
+
+    return "Unknown";
+  };
+
   // Process each attendee
   rowData.forEach((attendee) => {
     let signatureData = getValueFromPath$1(attendee, content.signature) || "";
@@ -4548,7 +4593,7 @@ const generateSignatureTable = (content, data) => {
       signatureData = createInvalidSvgPlaceholder();
     }
 
-    const displayName = getValueFromPath$1(attendee, content.displayNames) || "Unknown";
+    const displayName = resolveDisplayName(attendee);
     const isAttendeeTypeEnabled = !!content.attendeeType;
     const attendeeTypeValue = isAttendeeTypeEnabled ? attendee.attendeeType || null : null;
 
@@ -5370,9 +5415,23 @@ const processBodyContent = (content, data, layout) => {
       return table && !isTableEffectivelyEmpty(table) ? table : null;
     }
 
+    // Allow simple text blocks at body content level.
+    // This is additive: existing templates mostly render text via tables/stacks.
+    case "text": {
+      return object(content, data, layout.static, true, data);
+    }
+
     case "columns": {
       const columns = [];
-      for (const column of content.contents) {
+      // Support both historical `contents` and the more common pdfmake-style `columns`.
+      // Additive: existing templates using `contents` keep working.
+      const columnItems = Array.isArray(content.contents)
+        ? content.contents
+        : Array.isArray(content.columns)
+          ? content.columns
+          : [];
+
+      for (const column of columnItems) {
         if (column.visible && evaluateCondition(column.visible, data) === false) {
           continue;
         }
@@ -5381,7 +5440,15 @@ const processBodyContent = (content, data, layout) => {
           const table = tableObject(column, data, layout.static);
           if (table) columns.push(table);
         } else if (column.type === "signature") {
-          columns.push(generateSignatureTable(column, data));
+          const sig = generateSignatureTable(column, data);
+          // Signature blocks default to `width: "100%"` for standalone rendering.
+          // Inside a `columns` layout this can overflow, so we drop that default.
+          if (sig && sig.width === "100%") {
+            const { width, ...rest } = sig;
+            columns.push(rest);
+          } else {
+            columns.push(sig);
+          }
         } else {
           columns.push(object(column, data, layout.static, true, data));
         }
@@ -139832,6 +139899,9 @@ const createPDFFromImage = async (pdfDoc, blob, arrayBuffer) => {
   return pdfDoc;
 };
 
+const LETTER_PORTRAIT = { width: 612, height: 792 };
+const LETTER_LANDSCAPE = { width: 792, height: 612 };
+
 async function getNetworkAttachment(url) {
   const response = await fetch(url);
   const blob = await response.blob();
@@ -139850,6 +139920,105 @@ async function getNetworkAttachment(url) {
 
   return null;
 }
+
+const dataUriToBytes = (dataUriOrBase64Raw) => {
+  const raw = String(dataUriOrBase64Raw || "");
+  const base64 = raw.includes(",") ? raw.split(",")[1] : raw;
+  if (!base64) return null;
+  return isBrowser()
+    ? Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+    : Buffer.from(base64, "base64");
+};
+
+const attachmentToPdfBytes = async (attachment) => {
+  if (!attachment) return null;
+  if (attachment.url) return await getNetworkAttachment(attachment.url);
+  if (attachment.value && attachment.type === "application/pdf") {
+    return dataUriToBytes(attachment.value);
+  }
+  return null;
+};
+
+const addNormalizedPages = async (outDoc, srcBytes, targetSize, options = {}) => {
+  if (!srcBytes) return;
+  const srcDoc = await PDFDocument.load(srcBytes);
+  const pages = srcDoc.getPages();
+
+  for (const page of pages) {
+    const embedded = await outDoc.embedPage(page);
+    const { width: srcW, height: srcH } = page.getSize();
+
+    const targetW = targetSize?.width ?? LETTER_PORTRAIT.width;
+    const targetH = targetSize?.height ?? LETTER_PORTRAIT.height;
+    const margin = Number.isFinite(options?.margin) ? options.margin : 12;
+
+    // Prefer "fit-to-width" so pages expand more, but clamp if height would overflow.
+    const widthScale = (targetW - margin * 2) / srcW;
+    const heightScale = (targetH - margin * 2) / srcH;
+    const scale = Math.min(widthScale, heightScale);
+
+    const drawW = srcW * scale;
+    const drawH = srcH * scale;
+    const x = (targetW - drawW) / 2;
+    const y = (targetH - drawH) / 2;
+
+    const newPage = outDoc.addPage([targetW, targetH]);
+    newPage.drawPage(embedded, { x, y, xScale: scale, yScale: scale });
+  }
+};
+
+const mergePDFsNormalizedToLetter = async (
+  pdfBase64Data,
+  pdfAttachments,
+  options = {}
+) => {
+  const outDoc = await PDFDocument.create();
+
+  const mainBytes = dataUriToBytes(pdfBase64Data);
+  if (!mainBytes) return pdfBase64Data;
+
+  // Keep the main PDF pages exactly as generated.
+  const mainDoc = await PDFDocument.load(mainBytes);
+  const mainPages = mainDoc.getPages();
+  const targetSize =
+    options?.targetSize ||
+    (mainPages?.[0]
+      ? (() => {
+          const { width, height } = mainPages[0].getSize();
+          return { width, height };
+        })()
+      : options?.orientation === "landscape"
+        ? LETTER_LANDSCAPE
+        : LETTER_PORTRAIT);
+
+  const copiedMainPages = await outDoc.copyPages(
+    mainDoc,
+    mainPages.map((_, idx) => idx)
+  );
+  for (const p of copiedMainPages) outDoc.addPage(p);
+
+  // attachments
+  for (const attachment of pdfAttachments || []) {
+    const bytes = await attachmentToPdfBytes(attachment);
+    await addNormalizedPages(outDoc, bytes, targetSize, { margin: 12 });
+  }
+
+  const mergedBytes = await outDoc.save();
+
+  // Avoid `btoa(String.fromCharCode(...bytes))` which can overflow the call stack for large PDFs.
+  if (isBrowser()) {
+    const blob = new Blob([mergedBytes], { type: "application/pdf" });
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  const base64 = Buffer.from(mergedBytes).toString("base64");
+  return `data:application/pdf;base64,${base64}`;
+};
 
 const mergePDFs = async (pdfBase64Data, pdfAttachments, isBrowserEnv) => {
   const merger = new PDFMerger();
@@ -139938,11 +140107,12 @@ const pdfBase64 = async (layout, data) => {
 
         if (pdfAttachments?.length > 0) {
           try {
-            pdfBase64Data = await mergePDFs(
-              pdfBase64Data,
-              pdfAttachments,
-              isBrowser()
-            );
+            const shouldNormalize = layout?.setting?.normalizeMergedPages === true;
+            pdfBase64Data = shouldNormalize
+              ? await mergePDFsNormalizedToLetter(pdfBase64Data, pdfAttachments, {
+                  orientation: layout?.setting?.orientation,
+                })
+              : await mergePDFs(pdfBase64Data, pdfAttachments, isBrowser());
           } catch (error) {
             console.error("Error merging PDFs:", error);
             // Fall back to original PDF if merge fails
@@ -139964,11 +140134,12 @@ const pdfBase64 = async (layout, data) => {
         }
         if (pdfAttachments?.length > 0) {
           try {
-            pdfBase64Data = await mergePDFs(
-              pdfBase64Data,
-              pdfAttachments,
-              isBrowser()
-            );
+            const shouldNormalize = layout?.setting?.normalizeMergedPages === true;
+            pdfBase64Data = shouldNormalize
+              ? await mergePDFsNormalizedToLetter(pdfBase64Data, pdfAttachments, {
+                  orientation: layout?.setting?.orientation,
+                })
+              : await mergePDFs(pdfBase64Data, pdfAttachments, isBrowser());
           } catch (error) {
             console.error("Error merging PDFs:", error);
             // Fall back to original PDF if merge fails

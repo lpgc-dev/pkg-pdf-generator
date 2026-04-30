@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
+import advancedFormat from "dayjs/plugin/advancedFormat.js";
 import { Buffer } from "buffer";
 import pixelWidth from "string-pixel-width";
+
+dayjs.extend(advancedFormat);
 
 // =============================================================================
 // ENVIRONMENT DETECTION & CONSTANTS
@@ -189,6 +192,16 @@ const decodeBase64Svg = (base64Data) => {
     return Buffer.from(base64String, "base64").toString("utf-8");
   }
   return base64Data;
+};
+
+/**
+ * Formats a date value using dayjs if a date format is defined on the layout
+ * Must be called before prefix/suffix is applied so dayjs receives a clean date string
+ */
+const formatDateValue = (value, layout) => {
+  if (!layout.format || layout.format.type !== "date") return value;
+  if (value === null || value === undefined || value === "") return "";
+  return dayjs(value).format(layout.format.value);
 };
 
 /**
@@ -809,15 +822,7 @@ const processSvgContent = (layout, valueData) => {
  * Processes a text type content (default)
  */
 const processTextContent = (layout, valueData, itemStyle) => {
-  let processedValue = valueData;
-
-  if (layout.format && layout.format.type === "date") {
-    if (processedValue === null || processedValue === undefined) {
-      processedValue = "";
-    } else {
-      processedValue = dayjs(processedValue).format(layout.format.value);
-    }
-  }
+  const processedValue = valueData;
 
   const additionalProps = extractAdditionalProps(layout, [
     "type",
@@ -898,6 +903,9 @@ const object = (
 
   // Apply toFixed formatting
   valueData = formatToFixed(valueData, layout.toFixed);
+
+  // Apply date formatting before prefix/suffix so dayjs receives a clean date string
+  valueData = formatDateValue(valueData, layout);
 
   // Apply prefix and suffix
   if (!ignorePrefixAndSuffix) {

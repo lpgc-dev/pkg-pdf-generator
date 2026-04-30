@@ -49,6 +49,24 @@ function requireDayjs_min () {
 var dayjs_minExports = requireDayjs_min();
 var dayjs = /*@__PURE__*/getDefaultExportFromCjs(dayjs_minExports);
 
+var advancedFormat$2 = {exports: {}};
+
+var advancedFormat$1 = advancedFormat$2.exports;
+
+var hasRequiredAdvancedFormat;
+
+function requireAdvancedFormat () {
+	if (hasRequiredAdvancedFormat) return advancedFormat$2.exports;
+	hasRequiredAdvancedFormat = 1;
+	(function (module, exports) {
+		!function(e,t){module.exports=t();}(advancedFormat$1,(function(){return function(e,t){var r=t.prototype,n=r.format;r.format=function(e){var t=this,r=this.$locale();if(!this.isValid())return n.bind(this)(e);var s=this.$utils(),a=(e||"YYYY-MM-DDTHH:mm:ssZ").replace(/\[([^\]]+)]|Q|wo|ww|w|WW|W|zzz|z|gggg|GGGG|Do|X|x|k{1,2}|S/g,(function(e){switch(e){case"Q":return Math.ceil((t.$M+1)/3);case"Do":return r.ordinal(t.$D);case"gggg":return t.weekYear();case"GGGG":return t.isoWeekYear();case"wo":return r.ordinal(t.week(),"W");case"w":case"ww":return s.s(t.week(),"w"===e?1:2,"0");case"W":case"WW":return s.s(t.isoWeek(),"W"===e?1:2,"0");case"k":case"kk":return s.s(String(0===t.$H?24:t.$H),"k"===e?1:2,"0");case"X":return Math.floor(t.$d.getTime()/1e3);case"x":return t.$d.getTime();case"z":return "["+t.offsetName()+"]";case"zzz":return "["+t.offsetName("long")+"]";default:return e}}));return n.bind(this)(a)};}})); 
+	} (advancedFormat$2));
+	return advancedFormat$2.exports;
+}
+
+var advancedFormatExports = requireAdvancedFormat();
+var advancedFormat = /*@__PURE__*/getDefaultExportFromCjs(advancedFormatExports);
+
 var global$1 = (typeof global !== "undefined" ? global :
   typeof self !== "undefined" ? self :
   typeof window !== "undefined" ? window : {});
@@ -4044,6 +4062,8 @@ function requireLib$2 () {
 var libExports$1 = requireLib$2();
 var pixelWidth = /*@__PURE__*/getDefaultExportFromCjs(libExports$1);
 
+dayjs.extend(advancedFormat);
+
 // =============================================================================
 // ENVIRONMENT DETECTION & CONSTANTS
 // =============================================================================
@@ -4188,6 +4208,16 @@ const decodeBase64Svg = (base64Data) => {
     return Buffer$2.from(base64String, "base64").toString("utf-8");
   }
   return base64Data;
+};
+
+/**
+ * Formats a date value using dayjs if a date format is defined on the layout
+ * Must be called before prefix/suffix is applied so dayjs receives a clean date string
+ */
+const formatDateValue = (value, layout) => {
+  if (!layout.format || layout.format.type !== "date") return value;
+  if (value === null || value === undefined || value === "") return "";
+  return dayjs(value).format(layout.format.value);
 };
 
 /**
@@ -4808,15 +4838,7 @@ const processSvgContent = (layout, valueData) => {
  * Processes a text type content (default)
  */
 const processTextContent = (layout, valueData, itemStyle) => {
-  let processedValue = valueData;
-
-  if (layout.format && layout.format.type === "date") {
-    if (processedValue === null || processedValue === undefined) {
-      processedValue = "";
-    } else {
-      processedValue = dayjs(processedValue).format(layout.format.value);
-    }
-  }
+  const processedValue = valueData;
 
   const additionalProps = extractAdditionalProps(layout, [
     "type",
@@ -4897,6 +4919,9 @@ const object = (
 
   // Apply toFixed formatting
   valueData = formatToFixed(valueData, layout.toFixed);
+
+  // Apply date formatting before prefix/suffix so dayjs receives a clean date string
+  valueData = formatDateValue(valueData, layout);
 
   // Apply prefix and suffix
   if (!ignorePrefixAndSuffix) {

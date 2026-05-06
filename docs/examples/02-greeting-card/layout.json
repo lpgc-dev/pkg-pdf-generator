@@ -1,0 +1,68 @@
+{
+  "static": {
+    "logoSvg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='#3b5bdb'/><text x='50' y='58' text-anchor='middle' fill='white' font-size='34' font-family='Helvetica' font-weight='bold'>A</text></svg>",
+    "tagline": "Always Crafted, Made Excellent"
+  },
+  "styles": {
+    "title":   { "fontSize": 28, "bold": true, "alignment": "center", "color": "#222222" },
+    "tagline": { "fontSize": 12, "italics": true, "alignment": "center", "color": "#666666", "margin": [0, 4, 0, 0] },
+    "body":    { "fontSize": 12, "alignment": "justify", "lineHeight": 1.4, "margin": [0, 20, 0, 0] },
+    "signoff": { "fontSize": 12, "alignment": "right", "margin": [0, 30, 0, 0] }
+  },
+  "setting": {
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [60, 60, 60, 60],
+    "fontSize": 12
+  },
+  "header": { "margin": [0, 0, 0, 0], "contents": [] },
+  "footer": {
+    "margin": [40, 0, 40, 20],
+    "contents": [
+      {
+        "type": "text",
+        "value": ["$", "tagline"],
+        "alignment": "center",
+        "fontSize": 9,
+        "color": "#999999"
+      }
+    ],
+    "showDivider": true
+  },
+  "body": {
+    "content": [
+      {
+        "type": "svg",
+        "value": ["$", "logoSvg"],
+        "width": 80,
+        "alignment": "center"
+      },
+      {
+        "type": "text",
+        "value": "ACME Corp",
+        "style": "title",
+        "margin": [0, 10, 0, 0]
+      },
+      {
+        "type": "text",
+        "value": ["$", "tagline"],
+        "style": "tagline"
+      },
+      {
+        "type": "divider",
+        "color": "#dddddd",
+        "margin": [0, 16, 0, 16]
+      },
+      {
+        "type": "text",
+        "value": ["message"],
+        "style": "body"
+      },
+      {
+        "type": "text",
+        "value": ["signOff"],
+        "style": "signoff"
+      }
+    ]
+  }
+}

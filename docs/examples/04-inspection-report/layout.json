@@ -1,0 +1,190 @@
+{
+  "static": {
+    "logoSvg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='#0a7d3a'/><text x='50' y='62' text-anchor='middle' fill='white' font-size='44' font-family='Helvetica' font-weight='bold'>S</text></svg>",
+    "companyName": "SafetyFirst Inc."
+  },
+  "styles": {
+    "h1":         { "fontSize": 18, "bold": true, "alignment": "center", "color": "#222222" },
+    "subtitle":   { "fontSize": 11, "italics": true, "alignment": "center", "color": "#666666", "margin": [0, 0, 0, 12] },
+    "section":    { "fontSize": 13, "bold": true, "color": "#0a7d3a", "margin": [0, 14, 0, 4] },
+    "label":      { "fontSize": 10, "color": "#666666", "bold": true },
+    "value":      { "fontSize": 11, "color": "#111111" },
+    "yes":        { "fontSize": 10, "bold": true, "color": "white", "fillColor": "#0a7d3a", "alignment": "center" },
+    "no":         { "fontSize": 10, "bold": true, "color": "white", "fillColor": "#cc0000", "alignment": "center" },
+    "tableHead":  { "bold": true, "fontSize": 10, "color": "white", "fillColor": "#444444", "alignment": "center" },
+    "tableCell":  { "fontSize": 10 },
+    "warningBox": { "fontSize": 11, "bold": true, "color": "white", "fillColor": "#cc0000", "alignment": "center", "margin": [0, 4, 0, 4] }
+  },
+  "setting": {
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [40, 70, 40, 70],
+    "fontSize": 10
+  },
+  "header": {
+    "margin": [40, 12, 40, 0],
+    "contents": [
+      { "type": "svg",  "value": ["$", "logoSvg"], "width": 36, "alignment": "left" },
+      { "type": "text", "value": ["$", "companyName"], "alignment": "right", "fontSize": 12, "bold": true, "margin": [0, 8, 0, 0] }
+    ]
+  },
+  "footer": {
+    "margin": [40, 0, 40, 20],
+    "contents": [
+      { "type": "text", "value": "Confidential — internal use only", "alignment": "left", "fontSize": 9, "color": "#888" }
+    ],
+    "showDivider": true,
+    "showPageNumber": true
+  },
+  "body": {
+    "content": [
+      { "type": "text", "value": "Site Inspection Report", "style": "h1" },
+      { "type": "text", "value": ["siteName"], "style": "subtitle" },
+
+      {
+        "type": "table",
+        "widths": ["25%", "*", "25%", "*"],
+        "layout": "lightHorizontalLines",
+        "body": {
+          "rows": [
+            [
+              { "type": "text", "value": "Inspector",     "style": "label" },
+              { "type": "text", "value": ["inspectorName"], "style": "value" },
+              { "type": "text", "value": "Inspection date", "style": "label" },
+              { "type": "text", "value": ["inspectionDate"], "style": "value",
+                "format": { "type": "date", "value": "MM/DD/YYYY" } }
+            ],
+            [
+              { "type": "text", "value": "Project ID",    "style": "label" },
+              { "type": "text", "value": ["projectId"],   "style": "value" },
+              { "type": "text", "value": "Weather",        "style": "label" },
+              { "type": "text", "value": ["weather"],      "style": "value" }
+            ],
+            [
+              { "type": "text", "value": "PPE worn?",     "style": "label" },
+              {
+                "type": "text",
+                "value": ["ppeCompliant"],
+                "style": "value",
+                "condition": {
+                  "type": [true, false],
+                  "true":  { "value": "[YES]", "style": "yes" },
+                  "false": { "value": "[NO]",  "style": "no"  }
+                }
+              },
+              { "type": "text", "value": "Site secured?", "style": "label" },
+              {
+                "type": "text",
+                "value": ["siteSecured"],
+                "style": "value",
+                "condition": {
+                  "type": [true, false],
+                  "true":  { "value": "[YES]", "style": "yes" },
+                  "false": { "value": "[NO]",  "style": "no"  }
+                }
+              }
+            ]
+          ]
+        }
+      },
+
+      {
+        "type": "text",
+        "value": "URGENT: site was not secured at time of inspection.",
+        "style": "warningBox",
+        "visible": "siteSecured === false"
+      },
+
+      { "type": "text", "value": "Findings", "style": "section" },
+
+      {
+        "type": "table",
+        "widths": ["8%", "*", "16%", "16%"],
+        "layout": "lightHorizontalLines",
+        "rowData": ["findings"],
+        "ignoreEmpty": { "enable": true, "value": ["description"] },
+        "body": {
+          "header": [
+            { "type": "text", "value": "ID",          "style": "tableHead" },
+            { "type": "text", "value": "Description", "style": "tableHead", "alignment": "left" },
+            { "type": "text", "value": "Severity",    "style": "tableHead" },
+            { "type": "text", "value": "Status",      "style": "tableHead" }
+          ],
+          "rows": [
+            [
+              { "type": "text", "value": ["id"],          "style": "tableCell", "alignment": "center" },
+              { "type": "text", "value": ["description"], "style": "tableCell" },
+              {
+                "type": "text",
+                "value": ["severity"],
+                "style": "tableCell",
+                "alignment": "center",
+                "condition": {
+                  "type": ["low", "medium", "high"],
+                  "low":    { "value": "Low",    "style": "tableCell" },
+                  "medium": { "value": "Medium", "style": "tableCell" },
+                  "high":   { "value": "HIGH",   "style": "no" }
+                }
+              },
+              {
+                "type": "text",
+                "value": ["status"],
+                "style": "tableCell",
+                "alignment": "center",
+                "condition": {
+                  "type": ["open", "resolved"],
+                  "open":     { "value": "Open",     "style": "tableCell" },
+                  "resolved": { "value": "Resolved", "style": "yes" }
+                }
+              }
+            ]
+          ]
+        }
+      },
+
+      { "type": "text", "value": "Recommended actions", "style": "section",
+        "visible": "actions.length > 0" },
+
+      {
+        "type": "table",
+        "widths": ["8%", "*", "20%"],
+        "layout": "lightHorizontalLines",
+        "rowData": ["actions"],
+        "visible": "actions.length > 0",
+        "body": {
+          "header": [
+            { "type": "text", "value": "#",        "style": "tableHead" },
+            { "type": "text", "value": "Action",   "style": "tableHead", "alignment": "left" },
+            { "type": "text", "value": "Due by",   "style": "tableHead" }
+          ],
+          "rows": [
+            [
+              { "type": "text", "value": ["id"], "style": "tableCell", "alignment": "center" },
+              { "type": "text", "value": ["text"], "style": "tableCell" },
+              { "type": "text", "value": ["dueBy"], "style": "tableCell", "alignment": "center",
+                "format": { "type": "date", "value": "DD-MMM-YYYY" } }
+            ]
+          ]
+        }
+      },
+
+      { "type": "divider", "color": "#cccccc", "margin": [0, 16, 0, 4] },
+
+      {
+        "type": "signature",
+        "title": "Signed and witnessed by",
+        "showTitleDivider": true,
+        "titleFontSize": 13,
+        "titleMargin": [0, 8, 0, 6],
+        "rowData": ["signers"],
+        "signature": ["signatureSvg"],
+        "displayNames": ["fullName"],
+        "attendeeType": true,
+        "maxItemsPerRow": 3,
+        "minItemsPerRow": 3,
+        "boxGap": 4,
+        "placeholder": "No signatures captured for this inspection."
+      }
+    ]
+  }
+}

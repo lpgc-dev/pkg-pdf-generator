@@ -1,0 +1,40 @@
+{
+  "siteName": "North Plant — Bay 4",
+  "inspectorName": "Alex Doe",
+  "inspectionDate": "2025-04-22",
+  "projectId": "PR-7842",
+  "weather": "Overcast, 14°C",
+  "ppeCompliant": true,
+  "siteSecured": false,
+
+  "findings": [
+    { "id": "F1", "description": "Floor wet near press 3 — slip risk.",                    "severity": "medium", "status": "open" },
+    { "id": "F2", "description": "Loose cable across walkway near workshop entrance.",     "severity": "high",   "status": "open" },
+    { "id": "F3", "description": "First-aid kit missing eye-wash bottle.",                  "severity": "low",    "status": "resolved" },
+    { "id": "",   "description": "",                                                       "severity": "",       "status": "" }
+  ],
+
+  "actions": [
+    { "id": "A1", "text": "Mop wet floor and signpost until dry.",            "dueBy": "2025-04-22" },
+    { "id": "A2", "text": "Re-route loose cable through ceiling tray.",       "dueBy": "2025-04-23" },
+    { "id": "A3", "text": "Reorder first-aid kit eye-wash bottle (×2).",      "dueBy": "2025-04-29" }
+  ],
+
+  "signers": [
+    {
+      "fullName": "Alex Doe",
+      "attendeeType": "Inspector",
+      "signatureSvg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'><path d='M10 60 Q 40 10 80 50 T 150 40 T 190 55' fill='none' stroke='#222' stroke-width='2'/></svg>"
+    },
+    {
+      "fullName": "Sam Singh",
+      "attendeeType": "Site lead",
+      "signatureSvg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'><path d='M10 50 Q 50 20 90 60 T 170 30 T 195 50' fill='none' stroke='#222' stroke-width='2'/></svg>"
+    },
+    {
+      "fullName": "Jordan Lee",
+      "attendeeType": "Witness",
+      "signatureSvg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'><path d='M10 55 Q 60 5 100 45 T 180 35' fill='none' stroke='#222' stroke-width='2'/></svg>"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "static": {},
+  "styles": {
+    "title": { "fontSize": 22, "bold": true, "alignment": "center" }
+  },
+  "setting": {
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [40, 60, 40, 60]
+  },
+  "header": { "margin": [0, 0, 0, 0], "contents": [] },
+  "footer": { "margin": [0, 0, 0, 0], "contents": [] },
+  "body": {
+    "content": [
+      {
+        "type": "text",
+        "value": "Hello, world!",
+        "style": "title"
+      },
+      {
+        "type": "text",
+        "value": ["greeting"],
+        "alignment": "center",
+        "margin": [0, 20, 0, 0]
+      }
+    ]
+  }
+}

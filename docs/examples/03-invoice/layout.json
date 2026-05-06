@@ -1,0 +1,148 @@
+{
+  "static": {
+    "company": {
+      "name": "ACME Corp",
+      "address": "123 Workshop Lane, Industrial Park, ON K1A 0A6",
+      "email": "billing@acme.example.com"
+    }
+  },
+  "styles": {
+    "h1":         { "fontSize": 22, "bold": true, "color": "#222222" },
+    "h2":         { "fontSize": 12, "bold": true, "color": "#444444", "margin": [0, 14, 0, 4] },
+    "label":      { "fontSize": 10, "color": "#666666", "bold": true },
+    "value":      { "fontSize": 11, "color": "#111111" },
+    "small":      { "fontSize": 9,  "color": "#888888" },
+    "tableHead":  { "bold": true, "fontSize": 11, "color": "white", "fillColor": "#3b5bdb", "alignment": "center" },
+    "tableCell":  { "fontSize": 10 },
+    "totalLabel": { "fontSize": 12, "bold": true, "alignment": "right" },
+    "totalValue": { "fontSize": 12, "bold": true, "alignment": "right" }
+  },
+  "setting": {
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [40, 50, 40, 60],
+    "fontSize": 11
+  },
+  "header": {
+    "margin": [40, 16, 40, 0],
+    "contents": [
+      { "type": "text", "value": "INVOICE", "alignment": "left",  "fontSize": 11, "bold": true, "color": "#3b5bdb" },
+      { "type": "text", "value": ["invoiceNumber"], "alignment": "right", "fontSize": 11, "bold": true, "prefix": "# " }
+    ]
+  },
+  "footer": {
+    "margin": [40, 0, 40, 20],
+    "contents": [
+      { "type": "text", "value": ["$", "company", "email"], "alignment": "left", "fontSize": 9, "color": "#888" }
+    ],
+    "showDivider": true,
+    "showPageNumber": true
+  },
+  "body": {
+    "content": [
+      {
+        "type": "columns",
+        "columnGap": 20,
+        "contents": [
+          {
+            "type": "stack",
+            "content": [
+              { "type": "text", "value": ["$", "company", "name"],    "style": "h1" },
+              { "type": "text", "value": ["$", "company", "address"], "style": "small" },
+              { "type": "text", "value": ["$", "company", "email"],   "style": "small" }
+            ]
+          },
+          {
+            "type": "stack",
+            "content": [
+              { "type": "text", "value": "Bill to",        "style": "label",  "alignment": "right" },
+              { "type": "text", "value": ["billTo","name"],"style": "value",  "alignment": "right" },
+              { "type": "text", "value": ["billTo","line1"],"style": "small", "alignment": "right" },
+              { "type": "text", "value": ["billTo","cityZip"],"style": "small","alignment": "right" }
+            ]
+          }
+        ]
+      },
+
+      {
+        "type": "table",
+        "widths": ["auto", "*", "auto", "*"],
+        "layout": "noBorders",
+        "margin": [0, 18, 0, 0],
+        "body": {
+          "rows": [
+            [
+              { "type": "text", "value": "Invoice date:", "style": "label" },
+              { "type": "text", "value": ["invoiceDate"], "style": "value",
+                "format": { "type": "date", "value": "MMMM Do, YYYY" } },
+              { "type": "text", "value": "Due date:",     "style": "label" },
+              { "type": "text", "value": ["dueDate"],     "style": "value",
+                "format": { "type": "date", "value": "MMMM Do, YYYY" } }
+            ]
+          ]
+        }
+      },
+
+      { "type": "text", "value": "Items", "style": "h2" },
+
+      {
+        "type": "table",
+        "widths": ["*", "auto", "auto", "auto"],
+        "layout": "lightHorizontalLines",
+        "rowData": ["items"],
+        "body": {
+          "header": [
+            { "type": "text", "value": "Description", "style": "tableHead", "alignment": "left" },
+            { "type": "text", "value": "Qty",         "style": "tableHead", "alignment": "right" },
+            { "type": "text", "value": "Unit price",  "style": "tableHead", "alignment": "right" },
+            { "type": "text", "value": "Line total",  "style": "tableHead", "alignment": "right" }
+          ],
+          "rows": [
+            [
+              { "type": "text", "value": ["description"], "style": "tableCell" },
+              { "type": "text", "value": ["qty"],         "style": "tableCell", "alignment": "right" },
+              { "type": "text", "value": ["unitPrice"],   "style": "tableCell", "alignment": "right",
+                "prefix": "$", "toFixed": 2 },
+              { "type": "text", "value": ["lineTotal"],   "style": "tableCell", "alignment": "right",
+                "prefix": "$", "toFixed": 2 }
+            ]
+          ]
+        }
+      },
+
+      {
+        "type": "table",
+        "widths": ["*", "auto"],
+        "layout": "noBorders",
+        "margin": [0, 16, 0, 0],
+        "body": {
+          "rows": [
+            [
+              { "type": "text", "value": "Subtotal", "style": "totalLabel" },
+              { "type": "text", "value": ["subtotal"], "style": "totalValue",
+                "prefix": "$", "toFixed": 2 }
+            ],
+            [
+              { "type": "text", "value": "Tax",      "style": "totalLabel" },
+              { "type": "text", "value": ["tax"],   "style": "totalValue",
+                "prefix": "$", "toFixed": 2 }
+            ],
+            [
+              { "type": "text", "value": "Total due", "style": "totalLabel", "fontSize": 14 },
+              { "type": "text", "value": ["total"],   "style": "totalValue", "fontSize": 14,
+                "color": "#3b5bdb", "prefix": "$", "toFixed": 2 }
+            ]
+          ]
+        }
+      },
+
+      {
+        "type": "text",
+        "value": ["paymentInstructions"],
+        "style": "small",
+        "margin": [0, 24, 0, 0],
+        "visible": "paymentInstructions && paymentInstructions.length > 0"
+      }
+    ]
+  }
+}

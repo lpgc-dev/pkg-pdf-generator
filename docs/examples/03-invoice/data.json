@@ -1,0 +1,20 @@
+{
+  "invoiceNumber": "INV-2025-0142",
+  "invoiceDate": "2025-03-14",
+  "dueDate": "2025-04-13",
+  "billTo": {
+    "name": "Beta Industries Ltd.",
+    "line1": "8 Crescent Drive",
+    "cityZip": "Toronto, ON M5V 2T6"
+  },
+  "items": [
+    { "description": "Widget — standard",         "qty": 5, "unitPrice": 19.99, "lineTotal": 99.95 },
+    { "description": "Gadget — premium edition",  "qty": 2, "unitPrice": 49.50, "lineTotal": 99.00 },
+    { "description": "Thingamajig service plan",  "qty": 1, "unitPrice": 120.00,"lineTotal": 120.00 },
+    { "description": "Express shipping",          "qty": 1, "unitPrice": 14.95, "lineTotal": 14.95 }
+  ],
+  "subtotal": 333.90,
+  "tax": 43.41,
+  "total": 377.31,
+  "paymentInstructions": "Please remit by EFT to ACME Corp, transit 12345, account 67890. Quote the invoice number on the wire."
+}

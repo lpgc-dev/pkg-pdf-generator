@@ -3,6 +3,9 @@
 
 This project allows you to generate custom PDFs using JSON layouts and data. It uses `pdfmake` for PDF generation and `express` for serving the PDFs via an API.
 
+> **Are you here to design a layout, not to wire up the package?**
+> Head straight to [`docs/`](./docs/README.md) — there's a step-by-step authoring guide written for non-developers, plus runnable examples in [`docs/examples/`](./docs/examples/). Start with [`docs/01-introduction.md`](./docs/01-introduction.md).
+
 ## Getting Started
 
 To get started with the custom PDF generator, follow these steps:

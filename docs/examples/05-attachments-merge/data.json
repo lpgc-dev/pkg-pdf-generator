@@ -1,0 +1,27 @@
+{
+  "referenceId": "SUB-2025-0042",
+  "submittedAt": "2025-04-22",
+  "submitter": "Alex Doe",
+  "department": "Operations",
+
+  "attachments": [
+    {
+      "index": 1,
+      "name": "Site permit.pdf",
+      "kind": "PDF",
+      "url": "https://example.com/site-permit.pdf"
+    },
+    {
+      "index": 2,
+      "name": "Floor plan.pdf",
+      "kind": "PDF",
+      "url": "https://example.com/floor-plan.pdf"
+    },
+    {
+      "index": 3,
+      "name": "Photo of equipment label.jpg",
+      "kind": "Image",
+      "url": "https://example.com/equipment-label.jpg"
+    }
+  ]
+}

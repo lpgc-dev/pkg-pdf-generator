@@ -1,0 +1,95 @@
+{
+  "static": {},
+  "styles": {
+    "h1":     { "fontSize": 20, "bold": true, "color": "#222222" },
+    "h2":     { "fontSize": 12, "bold": true, "color": "#444444", "margin": [0, 12, 0, 4] },
+    "label":  { "fontSize": 10, "color": "#666666", "bold": true },
+    "value":  { "fontSize": 11, "color": "#111111" },
+    "small":  { "fontSize": 9,  "color": "#888888" },
+    "tableHead": { "bold": true, "fontSize": 10, "color": "white", "fillColor": "#3b5bdb", "alignment": "center" }
+  },
+  "setting": {
+    "size": "LETTER",
+    "orientation": "portrait",
+    "margin": [40, 60, 40, 60],
+    "fontSize": 11,
+    "normalizeMergedPages": true
+  },
+  "header": { "margin": [0, 0, 0, 0], "contents": [] },
+  "footer": {
+    "margin": [40, 0, 40, 20],
+    "contents": [],
+    "showPageNumber": true,
+    "showDivider": true
+  },
+  "body": {
+    "content": [
+      { "type": "text", "value": "Submission Cover Sheet", "style": "h1" },
+      {
+        "type": "text",
+        "value": "The pages following this cover sheet are the supporting documents submitted for this request.",
+        "style": "small",
+        "margin": [0, 4, 0, 0]
+      },
+
+      {
+        "type": "table",
+        "widths": ["25%", "*", "25%", "*"],
+        "layout": "lightHorizontalLines",
+        "margin": [0, 16, 0, 0],
+        "body": {
+          "rows": [
+            [
+              { "type": "text", "value": "Reference",   "style": "label" },
+              { "type": "text", "value": ["referenceId"], "style": "value" },
+              { "type": "text", "value": "Submitted",   "style": "label" },
+              { "type": "text", "value": ["submittedAt"], "style": "value",
+                "format": { "type": "date", "value": "MMMM Do, YYYY" } }
+            ],
+            [
+              { "type": "text", "value": "Submitted by", "style": "label" },
+              { "type": "text", "value": ["submitter"], "style": "value" },
+              { "type": "text", "value": "Department",  "style": "label" },
+              { "type": "text", "value": ["department"], "style": "value" }
+            ]
+          ]
+        }
+      },
+
+      { "type": "text", "value": "Attached documents", "style": "h2" },
+
+      {
+        "type": "table",
+        "widths": ["10%", "*", "20%"],
+        "layout": "lightHorizontalLines",
+        "rowData": ["attachments"],
+        "body": {
+          "header": [
+            { "type": "text", "value": "#",     "style": "tableHead" },
+            { "type": "text", "value": "Name",  "style": "tableHead", "alignment": "left" },
+            { "type": "text", "value": "Type",  "style": "tableHead" }
+          ],
+          "rows": [
+            [
+              { "type": "text", "value": ["index"], "alignment": "center" },
+              { "type": "text", "value": ["name"]  },
+              { "type": "text", "value": ["kind"], "alignment": "center" }
+            ]
+          ]
+        }
+      },
+
+      {
+        "type": "text",
+        "value": "No supporting documents were attached to this submission.",
+        "style": "small",
+        "margin": [0, 8, 0, 0],
+        "visible": "attachments.length === 0"
+      }
+    ]
+  },
+
+  "additionalContent": [
+    { "type": "conditional_mergePdf", "value": ["attachments"] }
+  ]
+}

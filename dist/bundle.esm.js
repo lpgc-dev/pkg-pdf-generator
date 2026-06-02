@@ -4693,14 +4693,27 @@ const generateSignatureTable = (content, data) => {
 // =============================================================================
 
 /**
- * Builds a horizontal divider for pdfmake
+ * Builds a horizontal divider for pdfmake.
+ *
+ * When `layout` is supplied (body content path), the default width is derived
+ * from page width minus the page's horizontal margins so the line spans the
+ * body content area exactly. An explicit `content.width` always wins. When
+ * `layout` is omitted (table-cell calls) we keep the legacy fallback.
  */
-const buildDivider = (content) => {
+const buildDivider = (content, layout = null) => {
   const lineWidth = content.lineWidth ?? 1;
   const color = content.color ?? "black";
   const margin = content.margin ?? [0, 0, 0, 0];
 
-  const width = content.width != null ? content.width : 752;
+  let defaultWidth = 752;
+  if (layout) {
+    const pageWidth = getPageWidth(layout);
+    const [pageLeft, pageRight] = readHorizontalMargin(layout?.setting?.margin);
+    const derived = pageWidth - pageLeft - pageRight;
+    if (derived > 0) defaultWidth = derived;
+  }
+
+  const width = content.width != null ? content.width : defaultWidth;
   return {
     canvas: [
       {
@@ -5337,15 +5350,83 @@ const processFooterTableBody = (body, currentPage, pageCount) => {
 };
 
 /**
- * Creates footer divider element
+ * pdfMake page-size table (points). Mirrors the named sizes pdfmake accepts so
+ * we can size the footer divider correctly for non-LETTER pages.
  */
-const createFooterDivider = () => ({
+const PAGE_SIZES = {
+  A0: [2383.94, 3370.39],
+  A1: [1683.78, 2383.94],
+  A2: [1190.55, 1683.78],
+  A3: [841.89, 1190.55],
+  A4: [595.28, 841.89],
+  A5: [419.53, 595.28],
+  A6: [297.64, 419.53],
+  LETTER: [612, 792],
+  LEGAL: [612, 1008],
+  TABLOID: [792, 1224],
+  EXECUTIVE: [521.86, 756],
+};
+
+/**
+ * Resolves the page width (points) from layout settings, honoring size keyword,
+ * custom [w, h] arrays, and orientation. Falls back to LETTER portrait.
+ */
+const getPageWidth = (layout) => {
+  const size = layout?.setting?.size ?? "LETTER";
+  const orientation = layout?.setting?.orientation ?? "portrait";
+
+  let dims;
+  if (Array.isArray(size) && size.length === 2) {
+    dims = [Number(size[0]) || 0, Number(size[1]) || 0];
+  } else if (typeof size === "string" && PAGE_SIZES[size.toUpperCase()]) {
+    dims = PAGE_SIZES[size.toUpperCase()];
+  } else {
+    dims = PAGE_SIZES.LETTER;
+  }
+
+  // pdfmake convention: dims are [width, height] in portrait; swap for landscape.
+  return orientation === "landscape" ? dims[1] : dims[0];
+};
+
+/**
+ * Reads a horizontal margin pair [left, right] from a pdfmake margin shorthand
+ * (single number, [h, v], or [l, t, r, b]).
+ */
+const readHorizontalMargin = (margin) => {
+  if (margin == null) return [0, 0];
+  if (typeof margin === "number") return [margin, margin];
+  if (Array.isArray(margin)) {
+    if (margin.length === 4) return [Number(margin[0]) || 0, Number(margin[2]) || 0];
+    if (margin.length === 2) return [Number(margin[0]) || 0, Number(margin[0]) || 0];
+    if (margin.length === 1) return [Number(margin[0]) || 0, Number(margin[0]) || 0];
+  }
+  return [0, 0];
+};
+
+/**
+ * Returns the horizontal length available for a footer-aligned divider line.
+ * pdfmake's footer band is NOT inset by pageMargins — only the body content
+ * is. The footer stack is offset solely by layout.footer.margin, so subtract
+ * just those to land flush with the page-number columns row above.
+ */
+const getFooterDividerWidth = (layout) => {
+  const pageWidth = getPageWidth(layout);
+  const [footerLeft, footerRight] = readHorizontalMargin(layout?.footer?.margin);
+  const width = pageWidth - footerLeft - footerRight;
+  return width > 0 ? width : 0;
+};
+
+/**
+ * Creates footer divider element. Width is derived from layout so the line
+ * mirrors the footer content margins instead of overflowing the right edge.
+ */
+const createFooterDivider = (layout) => ({
   canvas: [
     {
       type: "line",
       x1: 0,
       y1: 0,
-      x2: 1000,
+      x2: getFooterDividerWidth(layout),
       y2: 0,
       lineWidth: 1,
       margin: [0, 0, 0, 0],
@@ -5491,7 +5572,7 @@ const processBodyContent = (content, data, layout) => {
       return processArray(content, data, layout);
 
     case "divider": {
-      return buildDivider(content);
+      return buildDivider(content, layout);
     }
 
     default:
@@ -5517,7 +5598,7 @@ const createFooterFunction = (layout, data) => {
     const showDivider = layout.footer.showDivider === true;
 
     const footerStack = showDivider
-      ? [createFooterDivider(), { columns: footerContent }]
+      ? [createFooterDivider(layout), { columns: footerContent }]
       : [{ columns: footerContent }];
 
     footerContentObj.push({

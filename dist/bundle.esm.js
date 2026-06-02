@@ -5547,7 +5547,7 @@ const createFooterFunction = (layout, data) => {
         columns: [
           leftFooterTable || {
             ...paginateTxt,
-            text: "LEFT",
+            text: "",
             alignment: "left",
           },
           paginateTxt,

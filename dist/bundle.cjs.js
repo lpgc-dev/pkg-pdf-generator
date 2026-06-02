@@ -4695,14 +4695,27 @@ const generateSignatureTable = (content, data) => {
 // =============================================================================
 
 /**
- * Builds a horizontal divider for pdfmake
+ * Builds a horizontal divider for pdfmake.
+ *
+ * When `layout` is supplied (body content path), the default width is derived
+ * from page width minus the page's horizontal margins so the line spans the
+ * body content area exactly. An explicit `content.width` always wins. When
+ * `layout` is omitted (table-cell calls) we keep the legacy fallback.
  */
-const buildDivider = (content) => {
+const buildDivider = (content, layout = null) => {
   const lineWidth = content.lineWidth ?? 1;
   const color = content.color ?? "black";
   const margin = content.margin ?? [0, 0, 0, 0];
 
-  const width = content.width != null ? content.width : 752;
+  let defaultWidth = 752;
+  if (layout) {
+    const pageWidth = getPageWidth(layout);
+    const [pageLeft, pageRight] = readHorizontalMargin(layout?.setting?.margin);
+    const derived = pageWidth - pageLeft - pageRight;
+    if (derived > 0) defaultWidth = derived;
+  }
+
+  const width = content.width != null ? content.width : defaultWidth;
   return {
     canvas: [
       {
@@ -5394,14 +5407,14 @@ const readHorizontalMargin = (margin) => {
 
 /**
  * Returns the horizontal length available for a footer-aligned divider line.
- * Subtracts page margins and footer margins from page width so the line sits
- * flush with the footer content on both sides.
+ * pdfmake's footer band is NOT inset by pageMargins — only the body content
+ * is. The footer stack is offset solely by layout.footer.margin, so subtract
+ * just those to land flush with the page-number columns row above.
  */
 const getFooterDividerWidth = (layout) => {
   const pageWidth = getPageWidth(layout);
-  const [pageLeft, pageRight] = readHorizontalMargin(layout?.setting?.margin);
   const [footerLeft, footerRight] = readHorizontalMargin(layout?.footer?.margin);
-  const width = pageWidth - pageLeft - pageRight - footerLeft - footerRight;
+  const width = pageWidth - footerLeft - footerRight;
   return width > 0 ? width : 0;
 };
 
@@ -5561,7 +5574,7 @@ const processBodyContent = (content, data, layout) => {
       return processArray(content, data, layout);
 
     case "divider": {
-      return buildDivider(content);
+      return buildDivider(content, layout);
     }
 
     default:

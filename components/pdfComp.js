@@ -2,8 +2,80 @@ import dayjs from "dayjs";
 import advancedFormat from "dayjs/plugin/advancedFormat.js";
 import { Buffer } from "buffer";
 import pixelWidth from "string-pixel-width";
+import TableProcessor from "pdfmake/src/tableProcessor.js";
 
 dayjs.extend(advancedFormat);
+
+// =============================================================================
+// PDFMAKE PATCH: draw closing line on previous page at page-break boundaries
+// =============================================================================
+//
+// pdfmake's built-in dontBreakRows logic (tableProcessor.js:564-575) only
+// draws the top border of the new row on the *new* page when a page break
+// occurs — it never draws a corresponding closing border at the bottom of
+// the *old* page's last row. That asymmetry is unreachable from a layout
+// function alone, because by the time pdfmake fires the pageChanged event,
+// the writer's cursor has already moved to the new page.
+//
+// This patch wraps writer.tracker.auto('pageChanged', ...) calls made from
+// inside TableProcessor.prototype.endRow. We capture the writer's y and
+// page state *before* commitUnbreakableBlock runs (still on the old page),
+// then after pdfmake's original pageChanged callback draws the new-page
+// top line, we additionally call drawHorizontalLine with the captured y
+// and forcePage — pdfmake's addVector honors forcePage to emit on a prior
+// page (see elementWriter.js:192).
+//
+// Opt-in: only applies when the consuming layout sets
+// `drawClosingLineOnPageBreak: true`. Other layouts are unaffected.
+if (!TableProcessor.prototype.__closingLinePatchApplied) {
+  TableProcessor.prototype.__closingLinePatchApplied = true;
+  const originalEndRow = TableProcessor.prototype.endRow;
+  TableProcessor.prototype.endRow = function (rowIndex, writer, pageBreaks) {
+    const self = this;
+    const wantsPatch =
+      self.layout &&
+      self.layout.drawClosingLineOnPageBreak === true &&
+      self.dontBreakRows;
+    if (!wantsPatch) {
+      return originalEndRow.call(this, rowIndex, writer, pageBreaks);
+    }
+    const savedAuto = writer.tracker.auto;
+    writer.tracker.auto = function (event, callback, innerFunction) {
+      if (event !== "pageChanged") {
+        return savedAuto.apply(this, arguments);
+      }
+      let capturedY, capturedPage;
+      const wrappedInner = function () {
+        capturedY = writer.context().y;
+        capturedPage = writer.context().page;
+        innerFunction();
+      };
+      const wrappedCallback = function () {
+        callback.apply(this, arguments);
+        if (
+          rowIndex > 0 &&
+          !self.headerRows &&
+          self.layout.hLineWhenBroken !== false &&
+          capturedPage !== writer.context().page
+        ) {
+          self.drawHorizontalLine(
+            rowIndex,
+            writer,
+            capturedY,
+            false,
+            capturedPage
+          );
+        }
+      };
+      return savedAuto.call(this, event, wrappedCallback, wrappedInner);
+    };
+    try {
+      return originalEndRow.call(this, rowIndex, writer, pageBreaks);
+    } finally {
+      writer.tracker.auto = savedAuto;
+    }
+  };
+}
 
 // =============================================================================
 // ENVIRONMENT DETECTION & CONSTANTS
@@ -258,6 +330,78 @@ const TABLE_LAYOUTS = {
     paddingBottom: () => 0,
   },
 
+  // Like `outside`, but draws a horizontal line at every row boundary instead
+  // of only top + bottom of the table. Use this for long iterating tables that
+  // may break across pages — pdfmake won't close the table at a page boundary
+  // unless a hLine is drawn at that row index, so without this layout the
+  // bottom of the last visible row on each page has no border.
+  outsideWithRowLines: {
+    hLineWidth: () => 1,
+    vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0),
+    hLineColor: () => "black",
+    vLineColor: () => "black",
+    paddingLeft: () => 0,
+    paddingRight: () => 0,
+    paddingTop: () => 0,
+    paddingBottom: () => 0,
+  },
+
+  // Same as `outsideWithRowLines` but the inter-row hLines are drawn in a
+  // very light gray so they read as subtle row separators rather than a hard
+  // grid. The outer top/bottom/sides stay solid black so the table still has
+  // a strong frame. Because the layout still emits 1pt hLines on every row
+  // boundary, the table closes cleanly at page-break boundaries (just in
+  // the same light tone) — that's the trade-off vs. `outside` where page
+  // breaks have no closing line at all.
+  outsideWithSoftRowLines: {
+    hLineWidth: () => 1,
+    vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0),
+    hLineColor: (i, node) =>
+      i === 0 || i === node.table.body.length ? "black" : "#f0f0f0",
+    vLineColor: () => "black",
+    paddingLeft: () => 0,
+    paddingRight: () => 0,
+    paddingTop: () => 0,
+    paddingBottom: () => 0,
+  },
+
+  // Same outer borders as `outside`, plus a hLine only at page-break
+  // boundaries — no internal lines between consecutive rows on the same page.
+  //
+  // Detection mechanism: pdfmake calls `hLineWidth(i)` from three places in
+  // normal flow (beginRow(i-1) line 158, endRow(i-1) line 557, beginRow(i)
+  // line 156) for each non-edge index i. With `dontBreakRows: true` AND a
+  // page break for row i, the dontBreakRows pageChanged callback adds a
+  // FOURTH call (tableProcessor.js:568). So a call-count >= 4 uniquely
+  // identifies the page-break draw call.
+  //
+  // This must be a factory because the call-count Map needs to be fresh per
+  // table render (getTableLayout invokes the factory on each lookup).
+  //
+  // Requires `dontBreakRows: true` on the consuming table. The companion
+  // pdfmake patch above (gated by `drawClosingLineOnPageBreak: true`) adds
+  // the matching closing line at the bottom of the previous page.
+  outsidePerPage: () => {
+    const callCounts = new Map();
+    return {
+      drawClosingLineOnPageBreak: true,
+      hLineWidth: (i, node) => {
+        if (i === 0 || i === node.table.body.length) return 1;
+        const next = (callCounts.get(i) || 0) + 1;
+        callCounts.set(i, next);
+        return next >= 4 ? 1 : 0;
+      },
+      vLineWidth: (i, node) =>
+        i === 0 || i === node.table.widths.length ? 1 : 0,
+      hLineColor: () => "black",
+      vLineColor: () => "black",
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
+    };
+  },
+
   onlyVerticalLinesWithClosedBorders: {
     hLineWidth: (i, node) => {
       if (i === 0 || i === 1 || i === node.table.body.length) return 1;
@@ -297,7 +441,12 @@ const TABLE_LAYOUTS = {
  * Gets the appropriate table layout configuration
  */
 const getTableLayout = (layoutName) => {
-  return TABLE_LAYOUTS[layoutName] || layoutName;
+  const entry = TABLE_LAYOUTS[layoutName];
+  // Factory layouts (functions) own per-table state and must be invoked
+  // fresh on each lookup so multiple tables using the same name don't share
+  // state. Plain object layouts pass through unchanged.
+  if (typeof entry === "function") return entry();
+  return entry || layoutName;
 };
 
 // =============================================================================
@@ -758,12 +907,16 @@ const processStackContent = (layout, data, staticData, jsonData) => {
         item.value = item.value + (item.beforeSuffix || "") + item.suffix;
       }
 
-      return {
+      const textResult = {
         text: item.value,
-        alignment: item.alignment ?? "left",
         style: item.style !== null ? item.style : (layout.style ?? "normalText"),
         ...additionalProps,
       };
+      // Only emit an item-level alignment when the layout explicitly sets one.
+      // Otherwise pdfmake cascades the alignment declared on the resolved style
+      // — historically we forced "left" here, which silently overrode styles.
+      if (item.alignment != null) textResult.alignment = item.alignment;
+      return textResult;
     }
 
     if (item.type === "image") {
@@ -775,7 +928,11 @@ const processStackContent = (layout, data, staticData, jsonData) => {
     }
 
     if (item.type === "table") {
-      return tableObject(item, data, staticData);
+      // Nested tables inside a stack are processed via this branch. The stack
+      // received `jsonData` (the full data root) as its 4th arg but `data` can
+      // be null when the stack itself is a table cell — falling back to
+      // jsonData lets value paths like ["poNumber"] still resolve.
+      return tableObject(item, data ?? jsonData, staticData);
     }
 
     return item;
@@ -835,7 +992,12 @@ const processSvgContent = (layout, valueData) => {
  * Processes a text type content (default)
  */
 const processTextContent = (layout, valueData, itemStyle) => {
-  const processedValue = valueData;
+  // Default to empty string when no value resolved. Without this, an empty
+  // colSpan-placeholder cell ends up with `text: undefined`, which JSON
+  // serialization drops — pdfmake then sees `{style, colSpan}` with no
+  // content key and rejects the whole document with
+  // "Unrecognized document structure".
+  const processedValue = valueData ?? "";
 
   const additionalProps = extractAdditionalProps(layout, [
     "type",
@@ -844,12 +1006,16 @@ const processTextContent = (layout, valueData, itemStyle) => {
     "style",
   ]);
 
-  return {
+  const result = {
     text: processedValue,
-    alignment: layout.alignment ?? "left",
     style: itemStyle !== null ? itemStyle : (layout.style ?? "normalText"),
     ...additionalProps,
   };
+  // Only emit an item-level alignment when the layout explicitly sets one.
+  // Without this guard, every text cell defaults to "left" and silently
+  // overrides the alignment declared on the resolved style.
+  if (layout.alignment != null) result.alignment = layout.alignment;
+  return result;
 };
 
 /**
@@ -1005,10 +1171,23 @@ const object = (
 // =============================================================================
 
 /**
- * Processes table header row
+ * Processes table header row(s)
+ *
+ * Accepts either:
+ *   - body.header = [cell, cell, ...]      (single header row, legacy)
+ *   - body.header = [[cell, ...], [...]]   (multi-row header, new)
+ *
+ * Always returns an array of row arrays so callers can push them
+ * uniformly. Pair with `headerRows: N` to control how many of those
+ * rows pdfmake treats as the repeating header on page breaks.
  */
 const processTableHeader = (layout, data, staticData, maxColumns) => {
   if (!layout.body.header) return null;
+
+  const headerSpec = layout.body.header;
+  const isMultiRow =
+    headerSpec.length > 0 && Array.isArray(headerSpec[0]);
+  const headerRowSpecs = isMultiRow ? headerSpec : [headerSpec];
 
   let headerData = null;
 
@@ -1018,48 +1197,53 @@ const processTableHeader = (layout, data, staticData, maxColumns) => {
     headerData = getValueFromPath(data, layout.headerData);
   }
 
-  const headerRow = layout.body.header.map((cell, index) => {
-    let cellData = null;
+  const processOneRow = (rowSpec) => {
+    const headerRow = rowSpec.map((cell, index) => {
+      let cellData = null;
 
-    // Resolve prefix
-    let cellDataPrefix = cell.prefix ?? null;
-    if (cellDataPrefix && Array.isArray(cellDataPrefix)) {
-      cellDataPrefix = resolveValue(cellDataPrefix, staticData, data);
+      // Resolve prefix
+      let cellDataPrefix = cell.prefix ?? null;
+      if (cellDataPrefix && Array.isArray(cellDataPrefix)) {
+        cellDataPrefix = resolveValue(cellDataPrefix, staticData, data);
+      }
+
+      // Resolve suffix
+      let cellDataSuffix = cell.suffix ?? null;
+      if (cellDataSuffix && Array.isArray(cellDataSuffix)) {
+        cellDataSuffix = resolveValue(cellDataSuffix, staticData, data);
+      }
+
+      // Get cell data
+      if (headerData !== null) {
+        const isHeaderObject =
+          isObject(headerData[index]) || isObject(headerData);
+        cellData = isHeaderObject
+          ? getValueFromPath(headerData, cell.value)
+          : headerData[index];
+      } else if (Array.isArray(cell.value)) {
+        cellData = resolveValue(cell.value, staticData, data);
+      }
+
+      // Apply prefix/suffix
+      if (cellDataPrefix) {
+        cellData = cellDataPrefix + (cell.afterPrefix || "") + cellData;
+      }
+      if (cellDataSuffix) {
+        cellData = cellData + (cell.beforeSuffix || "") + cellDataSuffix;
+      }
+
+      return object(cell, cellData, staticData, false, data, null, true);
+    });
+
+    // Pad row to max columns
+    while (headerRow.length < maxColumns) {
+      headerRow.push({ text: "", style: "normalText" });
     }
 
-    // Resolve suffix
-    let cellDataSuffix = cell.suffix ?? null;
-    if (cellDataSuffix && Array.isArray(cellDataSuffix)) {
-      cellDataSuffix = resolveValue(cellDataSuffix, staticData, data);
-    }
+    return headerRow;
+  };
 
-    // Get cell data
-    if (headerData !== null) {
-      const isHeaderObject = isObject(headerData[index]) || isObject(headerData);
-      cellData = isHeaderObject
-        ? getValueFromPath(headerData, cell.value)
-        : headerData[index];
-    } else if (Array.isArray(cell.value)) {
-      cellData = resolveValue(cell.value, staticData, data);
-    }
-
-    // Apply prefix/suffix
-    if (cellDataPrefix) {
-      cellData = cellDataPrefix + (cell.afterPrefix || "") + cellData;
-    }
-    if (cellDataSuffix) {
-      cellData = cellData + (cell.beforeSuffix || "") + cellDataSuffix;
-    }
-
-    return object(cell, cellData, staticData, false, data, null, true);
-  });
-
-  // Pad row to max columns
-  while (headerRow.length < maxColumns) {
-    headerRow.push({ text: "", style: "normalText" });
-  }
-
-  return headerRow;
+  return headerRowSpecs.map(processOneRow);
 };
 
 /**
@@ -1113,16 +1297,29 @@ const tableObject = (layout, data, staticData) => {
 
   table.body = [];
 
-  // Calculate max columns
-  let maxColumns = layout.body.header ? layout.body.header.length : 0;
+  // Calculate max columns — handle both single-row and multi-row body.header
+  let maxColumns = 0;
+  if (layout.body.header) {
+    const headerSpec = layout.body.header;
+    const isMultiRowHeader =
+      headerSpec.length > 0 && Array.isArray(headerSpec[0]);
+    if (isMultiRowHeader) {
+      for (const headerRowSpec of headerSpec) {
+        maxColumns = Math.max(maxColumns, headerRowSpec.length);
+      }
+    } else {
+      maxColumns = headerSpec.length;
+    }
+  }
   for (const row of layout.body.rows) {
     maxColumns = Math.max(maxColumns, row.length);
   }
 
-  // Process header
-  const headerRow = processTableHeader(layout, data, staticData, maxColumns);
-  if (headerRow) {
-    table.body.push(headerRow);
+  // Process header (always an array of row arrays — even when there's
+  // only one header row, so we iterate uniformly).
+  const headerRows = processTableHeader(layout, data, staticData, maxColumns);
+  if (headerRows) {
+    for (const row of headerRows) table.body.push(row);
   }
 
   // Get row data
@@ -1457,10 +1654,30 @@ const pdfDefinition = (layout, data) => {
         object(header, data, layout.static, true, data)
       );
 
-      const col = { columns: headerObj };
+      // When the header has a single item, render it directly instead of
+      // wrapping in a `columns` layout — the columns wrapper can introduce
+      // unexpected styling/borders around nested tables in some viewers.
+      // For multi-item headers, keep the columns layout so siblings render
+      // side-by-side as before.
+      const col =
+        headerObj.length === 1
+          ? { ...headerObj[0] }
+          : { columns: headerObj };
       if (layout.header.margin) col.margin = layout.header.margin;
 
-      docDefinition.header = col;
+      // `skipLastPage: true` makes the document header NOT render on the
+      // final page. Useful when the last page only contains totals / notes /
+      // signatures, and you don't want the per-page company-info header
+      // crowding that page. Implemented by wrapping the static header
+      // content in a function that pdfmake calls per page.
+      if (layout.header.skipLastPage) {
+        docDefinition.header = function (currentPage, pageCount) {
+          if (currentPage === pageCount) return undefined;
+          return col;
+        };
+      } else {
+        docDefinition.header = col;
+      }
     }
 
     // Process body content

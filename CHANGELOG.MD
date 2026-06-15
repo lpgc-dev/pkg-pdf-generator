@@ -6,6 +6,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.10] - 2026-06-15
+
+Fix for nested-table layouts where the first data row was being re-rendered
+as a repeating page header on multi-page tables, surfaced by the rigging
+inspection PDF.
+
+### Added
+
+### Changed
+
+- **`tableObject` `headerRows` default** — no longer hard-codes `1` when the
+  layout omits `headerRows`. The default is now derived from `body.header`:
+  `0` when there is no header, `1` for a single-row header, `N` for a
+  multi-row header (`body.header[0]` is an array). An explicit
+  `layout.headerRows` still wins.
+
+### Fixed
+
+- [PHO-1147](https://lgc-devops.atlassian.net/browse/PHO-1147)
+  Rigging inspection PDF showed the first question/data row twice on
+  multi-page tables. Root cause: `table.headerRows` was defaulting to `1`
+  for tables that have no `body.header`, so pdfmake treated the first data
+  row as the repeating header and re-rendered it after each page break.
+
 ## [1.0.9] - 2026-06-08
 
 Iteration on the Shop Company OPS PO layout surfaced several improvements

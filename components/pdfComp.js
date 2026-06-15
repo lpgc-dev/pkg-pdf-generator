@@ -1389,7 +1389,19 @@ const tableObject = (layout, data, staticData) => {
   }
 
   // Set table properties
-  table.headerRows = layout.headerRows ?? 1;
+  // pdfmake's default for headerRows is 0. We honor an explicit value from
+  // the layout, otherwise derive from body.header: number of header rows if
+  // present (1 for single-row, N for multi-row), else 0. Defaulting to 1
+  // when no header exists causes pdfmake to re-render the first data row as
+  // a repeating page header on multi-page tables — visible in nested-table
+  // layouts (e.g. PHO-1147 rigging inspection) as the same data showing
+  // twice.
+  const defaultHeaderRows = layout.body.header
+    ? Array.isArray(layout.body.header[0])
+      ? layout.body.header.length
+      : 1
+    : 0;
+  table.headerRows = layout.headerRows ?? defaultHeaderRows;
   if (layout.dontBreakRows) table.dontBreakRows = true;
   if (layout.keepWithHeaderRows) table.keepWithHeaderRows = layout.keepWithHeaderRows;
 
